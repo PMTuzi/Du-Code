@@ -1,0 +1,1590 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>搭子 · Code 工作台</title>
+<style>
+  :root{
+    --bg:#ffffff;--sidebar:#f5f6f8;--text:#1a1a1a;--muted:#8b8f96;
+    --line:#e8eaed;--hover:#eceef1;--active:#e6f0ff;--brand:#2f6bff;
+    --chip-border:#e2e4e8;--danger:#e5484d;--ok:#22c55e;--warn:#f59e0b;
+    --shadow:0 8px 28px rgba(0,0,0,.14);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",Helvetica,Arial,sans-serif;
+    color:var(--text);background:var(--bg);display:flex;overflow:hidden}
+  button{font-family:inherit}
+
+  /* ---- SVG icons ---- */
+  .i{width:16px;height:16px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:2;
+    stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;display:inline-block}
+  .i.sm{width:14px;height:14px}
+  .i.lg{width:18px;height:18px}
+  .brand-logo .i{width:18px;height:18px;stroke:#fff}
+  .caret .i{width:14px;height:14px}
+
+  /* ---- Sidebar ---- */
+  .sidebar{width:250px;background:var(--sidebar);border-right:1px solid var(--line);
+    display:flex;flex-direction:column;height:100vh;flex-shrink:0;transition:margin-left .2s}
+  .sidebar.collapsed{margin-left:-250px}
+  .traffic{display:flex;align-items:center;justify-content:space-between;padding:14px 16px}
+  .dots{display:flex;gap:8px}
+  .dots i{width:12px;height:12px;border-radius:50%;display:block}
+  .dots .r{background:#ff5f57}.dots .y{background:#febc2e}.dots .g{background:#28c840}
+  .icon-btn{color:var(--muted);font-size:16px;cursor:pointer;background:none;border:none;
+    padding:4px;border-radius:6px;line-height:1}
+  .icon-btn:hover{background:var(--hover);color:var(--text)}
+  .brand-row{display:flex;align-items:center;gap:10px;padding:6px 16px 14px}
+  .brand-logo{width:30px;height:30px;border-radius:8px;overflow:hidden;
+    display:flex;align-items:center;justify-content:flex-start}
+  .brand-logo img{height:100%;width:auto;max-width:none;display:block}
+  .seg{display:flex;gap:4px;background:#e9ebef;border-radius:9px;padding:3px}
+  .seg button{border:none;background:transparent;color:var(--muted);font-size:13px;
+    padding:5px 14px;border-radius:7px;cursor:pointer;display:flex;align-items:center;gap:4px}
+  .seg button.active{background:#fff;color:var(--text);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+  .nav{padding:4px 10px}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;
+    font-size:14px;color:var(--text);cursor:pointer}
+  .nav-item:hover{background:var(--hover)}
+  .nav-item .ic{width:18px;text-align:center;color:#4a4f57}
+  .section{display:flex;align-items:center;justify-content:space-between;
+    padding:16px 12px 6px;font-size:12px;color:var(--muted)}
+  .section .grp{display:flex;align-items:center;gap:4px;cursor:pointer;user-select:none}
+  .section .grp .caret{transition:transform .15s}
+  .section.collapsed .grp .caret{transform:rotate(-90deg)}
+  .section .acts{display:flex;gap:2px}
+  .tree,.conv-list{padding:0 10px;overflow-y:auto;transition:height .15s}
+  .section.collapsed + .tree,.section.collapsed + .conv-list{display:none}
+  .ws{border-radius:8px}
+  .ws-head{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;
+    font-size:14px;cursor:pointer;position:relative}
+  .ws-head:hover{background:var(--hover)}
+  .ws-head .ic{color:#4a4f57;transition:transform .15s}
+  .ws.collapsed .ws-head .ic.caret{transform:rotate(-90deg)}
+  .ws-head .name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ws-head .pin{color:var(--warn);font-size:11px}
+  .row-acts{display:none;gap:2px;align-items:center}
+  .ws-head:hover .row-acts,.conv:hover .row-acts{display:flex}
+  .ws.collapsed .ws-body{display:none}
+  .conv{display:flex;align-items:center;gap:8px;padding:7px 10px 7px 30px;font-size:13px;
+    color:var(--muted);border-radius:8px;cursor:pointer;position:relative}
+  .conv:hover{background:var(--hover)}
+  .conv.active{background:var(--active);color:#1a56db}
+  .conv .label{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .conv-list > .conv{padding-left:14px}
+  /* status icons */
+  .st{width:14px;height:14px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center}
+  .st.loading{border:2px solid #c7ccd4;border-top-color:var(--brand);border-radius:50%;
+    animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .st.unread{width:8px;height:8px;background:var(--brand);border-radius:50%}
+  .st.error{width:8px;height:8px;background:var(--danger);border-radius:50%}
+  .sidebar-footer{margin-top:auto;display:flex;align-items:center;justify-content:space-between;
+    padding:14px 16px;border-top:1px solid var(--line)}
+  .user{display:flex;align-items:center;gap:10px}
+  .user .ava{width:30px;height:30px;border-radius:50%;background:#1a1a1a;color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}
+  .user .name{font-size:14px;font-weight:600}
+  .user .max{font-size:9px;background:#ffd23f;color:#1a1a1a;border-radius:3px;padding:1px 4px;
+    font-weight:700;margin-left:2px}
+
+  /* ---- Main ---- */
+  .main{flex:1;display:flex;flex-direction:row;position:relative;height:100vh;overflow:hidden}
+  .left-pane{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;position:relative}
+  #homeView{flex:1;overflow:auto;display:flex;flex-direction:column;align-items:center;padding-top:150px}
+  .home-art-btn{position:absolute;top:14px;right:14px;z-index:4}
+  .main.session .home-art-btn{display:none}
+  .topbar{position:absolute;top:14px;left:14px;display:flex;gap:6px;z-index:3}
+  .stage{width:100%;max-width:860px;padding:0 40px}
+  .headline{margin-bottom:40px}
+  .headline h1{font-size:40px;font-weight:800;line-height:1.35}
+  .headline .spark{color:var(--brand);font-size:20px;vertical-align:super}
+  .composer{border:1px solid var(--line);border-radius:16px;background:#fff;
+    box-shadow:0 4px 24px rgba(0,0,0,.05);padding:16px 16px 12px}
+  .composer.drag{border-color:var(--brand);background:#f5f9ff}
+  .composer textarea{width:100%;border:none;outline:none;resize:none;font-size:15px;
+    min-height:56px;font-family:inherit;color:var(--text);background:transparent}
+  .composer textarea::placeholder{color:#b7bcc4}
+  /* @文件 / 拖拽引用：输入框内的上下文标签 */
+  .ctx-chips{display:none;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+  .ctx-chips.show{display:flex}
+  .ctx-chip{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:#33373d;
+    background:#eef3ff;border:1px solid #d6e2ff;border-radius:7px;padding:4px 6px 4px 8px;max-width:220px}
+  .ctx-chip .i{color:var(--brand)}
+  .ctx-chip .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ctx-chip .rm{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;
+    border-radius:4px;cursor:pointer;color:#8a93a3}
+  .ctx-chip .rm:hover{background:#d6e2ff;color:var(--text)}
+  .composer-bar{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+  .cb-left,.cb-right{display:flex;align-items:center;gap:8px}
+  .chip{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:#4a4f57;
+    border:1px solid var(--line);background:#fff;padding:6px 10px;border-radius:8px;cursor:pointer}
+  .chip:hover{background:var(--hover)}
+  .chip.round{width:32px;height:32px;justify-content:center;padding:0;font-size:18px}
+  .send{width:34px;height:34px;border-radius:50%;border:none;background:#c7ccd4;color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer}
+  .send.ready{background:var(--brand)}
+  .composer-foot{display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:12px;
+    border-top:1px solid var(--line);font-size:13px;color:var(--muted);flex-wrap:wrap}
+  .foot-chip{display:inline-flex;align-items:center;gap:5px;cursor:pointer;padding:4px 8px;
+    border-radius:7px}
+  .foot-chip:hover{background:var(--hover);color:var(--text)}
+  .foot-chip.hidden{display:none}
+  .quick{display:flex;justify-content:center;gap:14px;margin-top:34px;flex-wrap:wrap}
+  .quick .q{display:flex;align-items:center;gap:7px;border:1px solid var(--chip-border);
+    border-radius:10px;padding:10px 16px;font-size:14px;background:#fff;cursor:pointer;color:#33373d}
+  .quick .q:hover{background:#f6f7f9;border-color:#cfd4db}
+  .quick .q .ic{color:#4a4f57}
+
+  /* ---- Popups / menus ---- */
+  .menu{position:fixed;z-index:50;background:#fff;border:1px solid var(--line);
+    border-radius:12px;box-shadow:var(--shadow);padding:6px;min-width:190px;display:none}
+  .menu.open{display:block}
+  .menu-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;
+    font-size:14px;cursor:pointer;color:var(--text);white-space:nowrap}
+  .menu-item:hover{background:var(--hover)}
+  .menu-item.danger{color:var(--danger)}
+  .menu-item.danger:hover{background:#fdeced}
+  .menu-item .ic{width:16px;text-align:center;color:#6b7078}
+  .menu-item.danger .ic{color:var(--danger)}
+  .menu-item .rt{margin-left:auto;color:var(--muted);font-size:12px}
+  .menu-sep{height:1px;background:var(--line);margin:5px 6px}
+  .menu-title{font-size:12px;color:var(--muted);padding:6px 12px 4px}
+  .menu-search{margin:4px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;
+    font-size:13px;width:calc(100% - 8px);outline:none}
+  .menu-item.check .chk{margin-left:auto;color:var(--brand);visibility:hidden}
+  .menu-item.check.sel .chk{visibility:visible}
+  .menu-item .sub{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+  .menu-item.col{display:block}
+  .menu-item.has-sub .sub-arrow{margin-left:auto;color:var(--muted)}
+  #modelSubMenu{min-width:200px}
+  #historyMenu{min-width:260px;max-width:320px}
+  .menu-item.hist{align-items:center}
+  .menu-item.hist .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* ---- Modal ---- */
+  .mask{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:100;display:none;
+    align-items:center;justify-content:center}
+  .mask.open{display:flex}
+  .modal{background:#fff;border-radius:16px;width:440px;max-width:92vw;padding:24px;
+    box-shadow:var(--shadow)}
+  .modal h3{font-size:17px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+  .modal .warn-ic{color:var(--warn)}
+  .modal p{font-size:14px;color:#4a4f57;line-height:1.6;margin-bottom:18px}
+  .modal input{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px 12px;
+    font-size:14px;outline:none;margin-bottom:18px}
+  .modal input:focus{border-color:var(--brand)}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px}
+  .mbtn{padding:9px 18px;border-radius:9px;font-size:14px;cursor:pointer;border:1px solid var(--line);
+    background:#fff;color:var(--text)}
+  .mbtn.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .mbtn.danger{background:var(--danger);color:#fff;border-color:var(--danger)}
+  .commit-box{background:#f2f4f7;border:1px solid var(--line);border-radius:12px;padding:10px 12px;
+    font-size:14px;margin-bottom:4px}
+  .commit-box .file{display:flex;align-items:center;justify-content:space-between;padding:6px 4px;color:#33373d}
+  .commit-box .file .fname{display:flex;align-items:center;gap:10px}
+  .commit-box .file .add{color:var(--ok)}.commit-box .file .del{color:var(--danger)}
+  .commit-modal{width:560px}
+  .cm-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .cm-head h3{display:flex;align-items:center;gap:10px;margin:0;font-size:18px}
+  .info-ic{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;
+    background:var(--brand);color:#fff;border-radius:50%}
+  .info-ic .i{width:13px;height:13px}
+  .br-chip{background:#eceef1;border-radius:6px;padding:2px 9px;font-family:"SFMono-Regular",Consolas,monospace;font-size:13px}
+  .cm-desc{font-size:14px;color:#33373d;margin-bottom:14px;line-height:1.6}
+  .cm-label{font-size:14px;font-weight:600;margin:16px 0 8px}
+  .cm-textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;
+    font-size:14px;outline:none;resize:none;font-family:inherit;color:#33373d;background:#f7f8fa;margin-bottom:18px}
+  .cm-textarea:focus{border-color:var(--brand);background:#fff}
+  .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#1a1a1a;
+    color:#fff;padding:10px 18px;border-radius:10px;font-size:14px;z-index:200;opacity:0;
+    transition:opacity .2s;pointer-events:none}
+  .toast.show{opacity:1}
+
+  /* ================= 会话视图 + 产物区 ================= */
+  #sessionView{display:none;flex:1;min-width:0;min-height:0}
+  .main.session #homeView{display:none}
+  .main.session #sessionView{display:flex}
+
+  /* 会话交互区 */
+  .conv-col{display:flex;flex-direction:column;flex:1;min-width:0;height:100%;border-right:1px solid var(--line)}
+  .conv-head{position:relative;text-align:center;padding:16px 48px 12px;border-bottom:1px solid var(--line)}
+  .conv-head .ch-title{font-size:15px;font-weight:600}
+  .conv-head .ch-sub{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:4px;margin-top:4px}
+  .conv-head .ch-menu{position:absolute;right:14px;top:16px}
+  .conv-body{flex:1;overflow:auto;padding:26px 90px}
+  .bubble{background:#f2f3f5;border-radius:12px;padding:14px 18px;font-size:14px;line-height:1.6;text-align:center}
+  .done-line{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:13px;margin:22px 0 12px;cursor:pointer}
+  .done-line .i{color:var(--ok)}
+  .agent-msg{font-size:14px;line-height:1.85;color:#2b2f36;position:relative}
+  .msg-acts{display:flex;gap:2px;margin-top:10px}
+  .jump-card{display:inline-flex;align-items:center;gap:8px;margin-top:18px;border:1px solid var(--line);
+    border-radius:10px;padding:10px 14px;font-size:13px;color:#33373d;cursor:pointer;background:#fafbfc}
+  .jump-card:hover{border-color:var(--brand);color:var(--brand)}
+  .conv-composer{padding:12px 32px 10px;border-top:1px solid var(--line)}
+  .mini-query{background:#f2f3f5;border-radius:10px;padding:10px 14px;font-size:13px;color:#33373d;margin-bottom:10px}
+  .conv-composer .composer{box-shadow:none;padding:12px 14px}
+  .send.stop{background:#1a1a1a}
+  .ai-note{text-align:center;font-size:12px;color:#b7bcc4;margin-top:8px}
+
+  /* 产物交付区 */
+  .art-col{display:none;flex-direction:column;width:48%;min-width:420px;height:100vh;background:#fff;border-left:1px solid var(--line)}
+  .main.art-open .art-col{display:flex}
+  .main.art-max .left-pane{display:none}
+  .main.art-max .art-col{width:100%}
+  .art-tabs{display:flex;align-items:center;gap:4px;padding:8px 10px;border-bottom:1px solid var(--line)}
+  .tabs{display:flex;gap:4px;overflow:auto;flex:1}
+  .tab{display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border-radius:8px;font-size:13px;
+    color:#4a4f57;cursor:pointer;white-space:nowrap;border:1px solid transparent}
+  .tab.active{background:#f2f4f8;border-color:var(--line);color:var(--text)}
+  .tab .x{width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;border-radius:4px}
+  .tab .x:hover{background:#dfe3e9}
+  .art-tabs-right{display:flex;gap:2px}
+  .art-toolbar{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--line)}
+  .crumb{font-size:13px;color:#4a4f57}
+  .tb-right{display:flex;align-items:center;gap:8px}
+  .ide-btn{display:inline-flex;align-items:center;gap:6px;background:var(--brand);color:#fff;border:none;
+    border-radius:8px;padding:7px 12px;font-size:13px;cursor:pointer}
+  .ide-btn:hover{filter:brightness(1.06)}
+  .ws-name{font-size:13px;color:#4a4f57}
+  .tree-toggle{border:1px solid transparent;border-radius:8px}
+  .tree-toggle.on{background:var(--active);color:var(--brand);border-color:#cfe0ff}
+  .art-main{flex:1;display:flex;min-height:0}
+  .editor{flex:1;position:relative;overflow:auto;background:#fff}
+  .ai-gen{position:absolute;right:14px;top:10px;font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:4px}
+  .art-toolbar .crumb-group{display:flex;align-items:center;gap:12px}
+  .preview-toggle{display:flex;gap:2px;background:#f2f4f8;border-radius:8px;padding:3px}
+  .pt-btn{border:none;background:transparent;font-size:12px;padding:4px 12px;border-radius:6px;cursor:pointer;color:var(--muted)}
+  .pt-btn.active{background:#fff;color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  #codeArea{margin:0;padding:14px 14px 40px 0;font:13px/1.7 "SFMono-Regular",Consolas,Menlo,monospace;
+    color:#2b2f36;counter-reset:ln;white-space:pre;tab-size:2}
+  .cl{display:block;padding-left:60px;position:relative}
+  .cl::before{counter-increment:ln;content:counter(ln);position:absolute;left:0;width:44px;text-align:right;
+    color:#c2c7cf;user-select:none}
+  .cl.active{background:#eef3ff}
+  .tok-key{color:#0b6ffb}.tok-str{color:#1a7f37}.tok-punc{color:#8a93a3}
+  .blank-panel{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#fff}
+  .bp-inner{width:360px;text-align:center}
+  .bp-title{font-size:16px;font-weight:600;margin-bottom:18px}
+  .bp-actions{display:flex;flex-direction:column;gap:10px}
+  .bp-btn{display:flex;align-items:center;gap:10px;justify-content:center;padding:12px;
+    border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;font-size:14px;color:#33373d}
+  .bp-btn:hover{border-color:var(--brand);color:var(--brand)}
+  .bp-hint{margin-top:16px;font-size:12px;color:var(--muted)}
+  .browser-view{position:absolute;inset:0;display:flex;flex-direction:column;background:#fff}
+  .bv-bar{display:flex;align-items:center;gap:8px;padding:10px 14px}
+  .bv-bar .icon-btn{color:#8a93a3}
+  .bv-input-wrap{flex:1;position:relative;display:flex;align-items:center}
+  .bv-input-wrap input{width:100%;border:1px solid var(--line);border-radius:22px;padding:11px 44px 11px 18px;
+    font-size:14px;outline:none;background:#fff;color:#33373d}
+  .bv-input-wrap input:focus{border-color:#cfe0ff;box-shadow:0 0 0 3px rgba(47,107,255,.12)}
+  .bv-go{position:absolute;right:8px}
+  .bv-suggest{display:none;position:absolute;top:46px;left:0;right:0;background:#fff;border:1px solid var(--line);
+    border-radius:14px;box-shadow:var(--shadow);padding:8px;z-index:5}
+  .bv-suggest.show{display:block}
+  .bv-sug-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;cursor:pointer;font-size:14px}
+  .bv-sug-item:hover{background:var(--hover)}
+  .bv-sug-item .i{color:#8a93a3}
+  .bv-sug-item .t{font-weight:600;color:#1a1a1a}
+  .bv-sug-item .u{color:var(--muted);font-size:13px}
+  .bv-page{flex:1;min-height:0;position:relative}
+  .bv-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+  .bv-empty-t{font-size:18px;font-weight:600;color:#33373d;margin-top:8px}
+  .bv-empty-s{font-size:14px;color:var(--muted)}
+  .bv-page iframe{width:100%;height:100%;border:0;display:block}
+
+  /* ---- 会话流：diff 卡片 ---- */
+  .diff-card{margin-top:18px;border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden;cursor:pointer}
+  .diff-card:hover{border-color:#cfe0ff;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+  .dc-head{display:flex;align-items:center;gap:10px;padding:12px 14px}
+  .dc-ico{width:30px;height:30px;border-radius:8px;background:#f2f3f5;display:inline-flex;
+    align-items:center;justify-content:center;color:#6b7280;flex-shrink:0}
+  .dc-t{font-size:14px;font-weight:600}
+  .dc-x{color:var(--muted);display:inline-flex;padding:2px;border-radius:4px}
+  .dc-x:hover{background:var(--hover)}
+  .dc-stat,.dc-file .s{margin-left:auto;font-size:13px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .dc-open{color:var(--muted);display:inline-flex;flex-shrink:0}
+  .dc-files{border-top:1px solid var(--line)}
+  .diff-card.collapsed .dc-files{display:none}
+  .dc-file{display:flex;align-items:center;gap:8px;padding:11px 14px;font-size:13px}
+  .dc-file .p{color:var(--muted)}
+  .add{color:#1a7f37}
+  .del{color:#c0392b}
+
+  /* ---- 代码变更（diff）页签 ---- */
+  .diff-view{position:absolute;inset:0;display:flex;flex-direction:column;background:#fff}
+  .dv-head{display:flex;align-items:flex-start;gap:10px;padding:14px 16px 12px}
+  .dv-title{font-size:17px;font-weight:700}
+  .dv-sub{font-size:13px;color:var(--muted);margin-top:6px;display:flex;align-items:center;gap:8px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .dv-head .icon-btn{margin-left:auto;border:1px solid var(--line);border-radius:8px;padding:6px}
+  .dv-body{flex:1;min-height:0;display:flex;border-top:1px solid var(--line)}
+  .dv-diff{flex:1;min-width:0;overflow:auto;padding:0 12px 12px}
+  .dv-blk{border:1px solid var(--line);border-radius:10px;margin-bottom:12px}
+  .dv-blk-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;padding:8px 10px;
+    background:#fafbfc;border-bottom:1px solid var(--line);border-radius:9px 9px 0 0;font-size:13px;white-space:nowrap}
+  .dv-blk-head .h{color:var(--muted);font-family:ui-monospace,Menlo,monospace;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .dv-blk-head .s{margin-left:auto;flex-shrink:0;font-family:ui-monospace,Menlo,monospace}
+  .dv-hunks{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;line-height:1.7;
+    overflow-x:auto;border-radius:0 0 9px 9px}
+  .dl{display:flex;white-space:pre}
+  .dl .ln{width:42px;flex-shrink:0;text-align:right;padding-right:8px;color:#a8aeb6;user-select:none}
+  .dl .tx{flex:1;padding:0 10px}
+  .dl.add{background:#e9f7ec}
+  .dl.add .tx{color:#14532d}
+  .dl.gap{background:#fafbfc;border-top:1px solid var(--line);border-bottom:1px solid var(--line);color:#a8aeb6}
+  .dv-side{width:224px;flex-shrink:0;border-left:1px solid var(--line);display:flex;flex-direction:column;
+    padding:10px;gap:8px;background:#fbfbfc}
+  .diff-view.side-hidden .dv-side{display:none}
+  .dv-side input{border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px;outline:none;background:#fff}
+  .dv-side input:focus{border-color:#cfe0ff;box-shadow:0 0 0 3px rgba(47,107,255,.12)}
+  .dv-side-list{flex:1;overflow:auto}
+  .dv-row{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:7px;font-size:13px;
+    cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dv-row:hover{background:var(--hover)}
+  .dv-row.dir{color:var(--muted)}
+  .dv-row.active{background:var(--active);color:#1a56db}
+  .file-tree{width:236px;flex-shrink:0;border-left:1px solid var(--line);display:flex;flex-direction:column;background:#fbfbfc}
+  .main.tree-hidden .file-tree{display:none}
+  .ft-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--line)}
+  .ft-ws{font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+  .ft-search{flex:1;min-width:0;border:1px solid var(--line);border-radius:7px;padding:5px 10px;font-size:13px;outline:none;background:#fff}
+  .ft-search:focus{border-color:#cfe0ff;box-shadow:0 0 0 3px rgba(47,107,255,.12)}
+  .ft-head.searching .ft-ws{display:none}
+  .ft-acts{display:flex;gap:2px}
+  .ft-scroll{flex:1;overflow:auto;padding:6px 6px 20px}
+  .ft-sec{font-size:12px;color:var(--muted);padding:8px 8px 4px}
+  .ft-row{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:7px;font-size:13px;
+    color:#33373d;cursor:pointer;white-space:nowrap}
+  .ft-row:hover{background:#eef0f3}
+  .ft-row.active{background:var(--active);color:#1a56db}
+  .ft-row .tw{width:14px;display:inline-flex;justify-content:center;color:#9aa0a8;transition:transform .12s}
+  .ft-row.open .tw{transform:rotate(90deg)}
+  .ft-row .fi{color:#7a828c}
+  .ft-row.active .fi{color:#1a56db}
+  .ft-children{padding-left:14px}
+  .ctx-menu{position:fixed;z-index:60}
+</style>
+</head>
+<body>
+  <!-- ===== SVG sprite ===== -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <symbol id="i-bot" viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3"/><circle cx="9" cy="14" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1.2" fill="currentColor" stroke="none"/><line x1="12" y1="4.5" x2="12" y2="8"/><circle cx="12" cy="3" r="1.3"/></symbol>
+    <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><line x1="12" y1="17" x2="12" y2="22"/><path d="M9 2h6l-1 7 4 3v2H6v-2l4-3z"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
+    <symbol id="i-remove" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="8" y1="12" x2="16" y2="12"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M3 7l9 5 9-5"/><line x1="12" y1="12" x2="12" y2="22"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+    <symbol id="i-shield-check" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></symbol>
+    <symbol id="i-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></symbol>
+    <symbol id="i-half" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-diamond" viewBox="0 0 24 24"><polygon points="12 2 22 12 12 22 2 12"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/></symbol>
+    <symbol id="i-branch" viewBox="0 0 24 24"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></symbol>
+    <symbol id="i-history" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></symbol>
+    <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="3" y1="12" x2="21" y2="12"/><path d="M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18z"/></symbol>
+    <symbol id="i-layout" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></symbol>
+    <symbol id="i-game" viewBox="0 0 24 24"><line x1="7" y1="12" x2="11" y2="12"/><line x1="9" y1="10" x2="9" y2="14"/><line x1="15" y1="11" x2="15.01" y2="11"/><line x1="17.5" y1="13.5" x2="17.51" y2="13.5"/><rect x="2" y="6" width="20" height="12" rx="5"/></symbol>
+    <symbol id="i-gift" viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+    <symbol id="i-arrow-up" viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></symbol>
+    <symbol id="i-at" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.9 7.9"/></symbol>
+    <symbol id="i-chevron-r" viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24"><path d="M7 10v11M18 10l-3-7a2 2 0 0 0-3.8.6V8H5.7A2 2 0 0 0 4 10l1.4 8a2 2 0 0 0 2 1.7H16a2 2 0 0 0 2-1.6l1.4-6A2 2 0 0 0 18 10z"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M17 14V3M6 14l3 7a2 2 0 0 0 3.8-.6V16h5.5a2 2 0 0 0 1.7-2l-1.4-8a2 2 0 0 0-2-1.7H8a2 2 0 0 0-2 1.6L4.6 12A2 2 0 0 0 6 14z"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-sidebar-r" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="15" y1="3" x2="15" y2="21"/></symbol>
+    <symbol id="i-panel-right" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="14" y1="3" x2="14" y2="21"/><rect x="14" y="3" width="7" height="18" rx="0" fill="currentColor" stroke="none" opacity="0.28"/></symbol>
+    <symbol id="i-chevron-l" viewBox="0 0 24 24"><polyline points="15 6 9 12 15 18"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.5 9a9 9 0 0 1 14.9-3.4L23 10M1 14l4.6 4.4A9 9 0 0 0 20.5 15"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+    <symbol id="i-arrow-ur" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></symbol>
+    <symbol id="i-more-v" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.6" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="7.5" r="1.3" fill="currentColor" stroke="none"/><line x1="12" y1="11" x2="12" y2="17"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></symbol>
+    <symbol id="i-json" viewBox="0 0 24 24"><path d="M8 4c-2 0-3 1-3 3v2c0 1-1 2-2 2 1 0 2 1 2 2v2c0 2 1 3 3 3"/><path d="M16 4c2 0 3 1 3 3v2c0 1 1 2 2 2-1 0-2 1-2 2v2c0 2-1 3-3 3"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></symbol>
+    <symbol id="i-video" viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></symbol>
+    <symbol id="i-ppt" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="1"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></symbol>
+    <symbol id="i-md" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 15V9l3 3 3-3v6"/><path d="M17 9v4M17 13l2-2M17 13l-2-2"/></symbol>
+    <symbol id="i-jsfile" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9v5a1.5 1.5 0 0 1-3 0"/><path d="M14 9a2 2 0 0 0-2 2c0 2 3 1.5 3 3.5a2 2 0 0 1-3 .5"/></symbol>
+  </defs></svg>
+
+  <!-- ===== Sidebar ===== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="traffic">
+      <div class="dots"><i class="r"></i><i class="y"></i><i class="g"></i></div>
+      <button class="icon-btn" id="collapseBtn" title="收起侧边栏"><svg class="i"><use href="#i-panel"></use></svg></button>
+    </div>
+
+    <div class="brand-row">
+      <div class="brand-logo"><img src="dumatelogo.png" alt="DuMate"></div>
+      <div class="seg" id="modeSeg">
+        <button data-mode="work">Work</button>
+        <button class="active" data-mode="code">&lt;/&gt; Code</button>
+      </div>
+    </div>
+
+    <div class="nav">
+      <div class="nav-item" data-track="新任务"><span class="ic"><svg class="i"><use href="#i-plus"></use></svg></span>新任务</div>
+      <div class="nav-item" data-track="专家套件·技能"><span class="ic"><svg class="i"><use href="#i-grid"></use></svg></span>专家套件·技能</div>
+      <div class="nav-item" data-track="自动化"><span class="ic"><svg class="i"><use href="#i-clock"></use></svg></span>自动化</div>
+    </div>
+
+    <!-- 列表：工作区分组 -->
+    <div class="section" id="secTasks">
+      <span class="grp" data-toggle="secTasks"><span class="caret"><svg class="i"><use href="#i-chevron"></use></svg></span> 列表</span>
+      <div class="acts">
+        <button class="icon-btn" title="折叠/展开全部工作区" data-collapse-all="tasks"><svg class="i"><use href="#i-list"></use></svg></button>
+      </div>
+    </div>
+    <div class="tree" id="taskTree"></div>
+
+    <!-- 默认：未归属工作区的会话 -->
+    <div class="section" id="secDefault">
+      <span class="grp" data-toggle="secDefault"><span class="caret"><svg class="i"><use href="#i-chevron"></use></svg></span> 默认</span>
+      <div class="acts">
+        <button class="icon-btn" id="searchBtn" title="搜索会话"><svg class="i"><use href="#i-search"></use></svg></button>
+        <button class="icon-btn" id="newConvBtn" title="新建会话（不选中工作区）"><svg class="i"><use href="#i-plus"></use></svg></button>
+      </div>
+    </div>
+    <div class="conv-list" id="convList"></div>
+
+    <div class="sidebar-footer">
+      <div class="user">
+        <div class="ava">B</div>
+        <div class="name">Baidu搭子<span class="max">MAX</span></div>
+      </div>
+      <button class="icon-btn"><svg class="i"><use href="#i-gift"></use></svg></button>
+    </div>
+  </aside>
+
+  <!-- ===== Main ===== -->
+  <main class="main">
+    <div class="topbar" id="topbar" style="display:none">
+      <button class="icon-btn" id="expandBtn" title="展开侧边栏"><svg class="i"><use href="#i-panel"></use></svg></button>
+    </div>
+
+    <div class="left-pane" id="leftPane">
+    <button class="icon-btn home-art-btn" id="homeArtBtn" title="折叠/展开产物区"><svg class="i"><use href="#i-panel-right"></use></svg></button>
+    <div id="homeView">
+    <div class="stage">
+      <div class="headline">
+        <h1>搭子帮你<span class="spark"><svg class="i lg"><use href="#i-spark"></use></svg></span></h1>
+        <h1>一键完成项目开发</h1>
+      </div>
+
+      <div class="composer" id="composer">
+        <div class="ctx-chips" id="ctxChips"></div>
+        <textarea id="promptInput" placeholder="输入消息…（支持 @文件、/技能、拖拽文件为上下文）"></textarea>
+        <div class="composer-bar">
+          <div class="cb-left">
+            <button class="chip round" id="plusBtn" title="技能与套件（+ 或 /）"><svg class="i"><use href="#i-plus"></use></svg></button>
+            <button class="chip" id="permBtn"><svg class="i" id="permIcon"><use href="#i-shield"></use></svg><span id="permLabel">手动确认</span><svg class="i sm"><use href="#i-chevron"></use></svg></button>
+          </div>
+          <div class="cb-right">
+            <button class="chip" id="modelBtn"><svg class="i" id="modelIcon"><use href="#i-zap"></use></svg><span id="modelLabel">快速</span><svg class="i sm"><use href="#i-chevron"></use></svg></button>
+            <button class="chip round" title="语音输入"><svg class="i"><use href="#i-mic"></use></svg></button>
+            <button class="send" id="sendBtn"><svg class="i"><use href="#i-arrow-up"></use></svg></button>
+          </div>
+        </div>
+        <div class="composer-foot">
+          <span class="foot-chip"><svg class="i sm"><use href="#i-monitor"></use></svg> 本地</span>
+          <span class="foot-chip" id="wsBtn"><svg class="i sm"><use href="#i-folder"></use></svg> <span id="wsLabel">选择本地工作区</span> <svg class="i sm"><use href="#i-chevron"></use></svg></span>
+          <span class="foot-chip" id="branchBtn"><svg class="i sm"><use href="#i-branch"></use></svg> <span id="branchLabel">main</span> <svg class="i sm"><use href="#i-chevron"></use></svg></span>
+        </div>
+      </div>
+
+      <div class="quick" id="quickCards">
+        <div class="q" data-prompt="帮我开发一个应用："><span class="ic"><svg class="i"><use href="#i-layout"></use></svg></span>应用开发</div>
+        <div class="q" data-prompt="帮我理解这个项目："><span class="ic"><svg class="i"><use href="#i-play"></use></svg></span>项目理解</div>
+        <div class="q" data-prompt="帮我开发一个小程序："><span class="ic"><svg class="i"><use href="#i-phone"></use></svg></span>小程序开发</div>
+        <div class="q" data-prompt="帮我开发一个游戏："><span class="ic"><svg class="i"><use href="#i-game"></use></svg></span>游戏开发</div>
+        <div class="q" data-prompt="帮我搭建一个网站："><span class="ic"><svg class="i"><use href="#i-globe"></use></svg></span>搭建网站</div>
+      </div>
+    </div>
+    </div><!-- /#homeView -->
+
+    <!-- ===== 会话进行中 + 产物交付区 ===== -->
+    <section id="sessionView">
+      <!-- 会话交互区 -->
+      <div class="conv-col" id="convCol">
+        <div class="conv-head">
+          <div class="ch-title" id="sessTitle">完成 AI 全球热点分布小程序的设计</div>
+          <div class="ch-sub"><svg class="i sm"><use href="#i-monitor"></use></svg> 本地</div>
+          <button class="icon-btn ch-menu" id="openArtBtn" title="打开产物区"><svg class="i"><use href="#i-panel-right"></use></svg></button>
+        </div>
+        <div class="conv-body" id="convBody">
+          <div class="bubble user">基于新闻素材，完成 AI 全球热点分布小程序的设计，重点覆盖 Claude、GPT 全系列产品</div>
+          <div class="done-line"><svg class="i sm"><use href="#i-check"></use></svg> 已完成 6m 7s <svg class="i sm"><use href="#i-chevron-r"></use></svg></div>
+          <div class="agent-msg">过去一周最火的大模型 — 神秘代号 Ox-Alpha、被称为"牛来大模型"的产品。该模型已开放权重，支持图片、视频多模态，整体性能可看作"强化版 DeepSeek V4 Flash"，但尚未超过 GLM-5.3 旗舰。8月26日发布2026年中期财报：上半年营收约1.17亿美元（同比+283%），仅半年已达2025全年1.5倍；8月 ARR 正式突破8亿美元，B 端占比80%。
+            <div class="msg-acts">
+              <button class="icon-btn" title="复制"><svg class="i sm"><use href="#i-copy"></use></svg></button>
+              <button class="icon-btn" title="点赞"><svg class="i sm"><use href="#i-up"></use></svg></button>
+              <button class="icon-btn" title="点踩"><svg class="i sm"><use href="#i-down"></use></svg></button>
+            </div>
+          </div>
+          <div class="jump-card" id="jumpCard"><svg class="i sm"><use href="#i-globe"></use></svg> 产物已生成：index.html · 点击打开预览</div>
+          <!-- diff 卡片：点击在右侧「代码变更」页签预览变更 -->
+          <div class="diff-card" id="diffCard" style="display:none" title="点击在右侧预览代码变更">
+            <div class="dc-head">
+              <span class="dc-ico"><svg class="i"><use href="#i-grid"></use></svg></span>
+              <span class="dc-t">1 个文件已更改</span>
+              <span class="dc-stat"><span class="add">+183</span> <span class="del">-0</span></span>
+              <span class="dc-open"><svg class="i sm"><use href="#i-arrow-ur"></use></svg></span>
+            </div>
+            <div class="dc-files">
+              <div class="dc-file">
+                <svg class="i sm" style="color:var(--warn)"><use href="#i-file"></use></svg>
+                <span class="n">daily_horoscope.html</span>
+                <span class="p">./daily_horoscope.html</span>
+                <span class="s"><span class="add">+183</span> <span class="del">-0</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="conv-composer">
+          <div class="mini-query">围绕产品定位、核心能力、目标用户完成竞品横向对比</div>
+          <div class="composer" id="composer2">
+            <textarea id="promptInput2" placeholder="需要搭子帮你做什么？可快速调用技能及套件，同时支持添加队列"></textarea>
+            <div class="composer-bar">
+              <div class="cb-left">
+                <button class="chip round" title="技能与套件"><svg class="i"><use href="#i-plus"></use></svg></button>
+                <button class="chip" id="permBtn2"><svg class="i"><use href="#i-shield"></use></svg><span>默认权限</span><svg class="i sm"><use href="#i-chevron"></use></svg></button>
+              </div>
+              <div class="cb-right">
+                <button class="chip"><svg class="i"><use href="#i-zap"></use></svg><span>快速</span><svg class="i sm"><use href="#i-chevron"></use></svg></button>
+                <button class="chip round" title="语音输入"><svg class="i"><use href="#i-mic"></use></svg></button>
+                <button class="send stop" id="stopBtn" title="停止生成"><svg class="i"><use href="#i-stop"></use></svg></button>
+              </div>
+            </div>
+          </div>
+          <div class="ai-note">内容由 AI 生成</div>
+        </div>
+      </div>
+    </section>
+    </div><!-- /.left-pane -->
+
+      <!-- 产物交付区（含文件树） -->
+      <div class="art-col" id="artCol">
+        <div class="art-tabs">
+          <div class="tabs" id="tabBar"></div>
+          <button class="icon-btn" id="newTabBtn" title="新建页签"><svg class="i"><use href="#i-plus"></use></svg></button>
+          <div class="art-tabs-right">
+            <button class="icon-btn" id="artExpand" title="放大产物区"><svg class="i"><use href="#i-expand"></use></svg></button>
+            <button class="icon-btn" id="artCollapse" title="折叠产物区"><svg class="i"><use href="#i-panel"></use></svg></button>
+          </div>
+        </div>
+        <div class="art-toolbar">
+          <div class="crumb-group">
+            <span class="crumb" id="crumb">app.json</span>
+            <div class="preview-toggle" id="previewToggle" style="display:none">
+              <button class="pt-btn active" data-view="source">源码</button>
+              <button class="pt-btn" data-view="preview">预览</button>
+            </div>
+          </div>
+          <div class="tb-right">
+            <button class="ide-btn" id="openIdeBtn"><svg class="i sm"><use href="#i-bolt"></use></svg> 打开 IDE</button>
+            <button class="icon-btn tree-toggle on" id="treeToggle" title="显示/隐藏目录树"><svg class="i sm"><use href="#i-panel-right"></use></svg></button>
+          </div>
+        </div>
+        <div class="art-main">
+          <div class="editor" id="editor">
+            <div class="ai-gen"><svg class="i sm"><use href="#i-spark"></use></svg> AI 生成</div>
+            <pre id="codeArea"></pre>
+            <div class="browser-view" id="browserView" style="display:none">
+              <div class="bv-bar">
+                <button class="icon-btn" data-bv="back" title="后退"><svg class="i sm"><use href="#i-chevron-l"></use></svg></button>
+                <button class="icon-btn" data-bv="fwd" title="前进"><svg class="i sm"><use href="#i-chevron-r"></use></svg></button>
+                <button class="icon-btn" data-bv="refresh" title="刷新"><svg class="i sm"><use href="#i-refresh"></use></svg></button>
+                <div class="bv-input-wrap">
+                  <input id="bvInput" placeholder="搜索或输入网址" autocomplete="off">
+                  <button class="icon-btn bv-go" data-bv="open" title="打开"><svg class="i sm"><use href="#i-arrow-ur"></use></svg></button>
+                  <div class="bv-suggest" id="bvSuggest">
+                    <div class="bv-sug-item" data-url="http://127.0.0.1:8000">
+                      <svg class="i"><use href="#i-globe"></use></svg>
+                      <span class="t">排序算法可视化</span><span class="u">— 127.0.0.1:8000</span>
+                    </div>
+                  </div>
+                </div>
+                <button class="icon-btn" data-bv="menu" title="更多"><svg class="i sm"><use href="#i-more-v"></use></svg></button>
+              </div>
+              <div class="bv-page">
+                <div class="bv-empty" id="bvEmpty">
+                  <svg class="i" style="width:48px;height:48px;color:#8a93a3"><use href="#i-globe"></use></svg>
+                  <div class="bv-empty-t">开始浏览</div>
+                  <div class="bv-empty-s">输入 URL 以打开页面</div>
+                </div>
+                <iframe id="bvFrame" style="display:none" sandbox="allow-same-origin allow-scripts allow-forms"></iframe>
+              </div>
+            </div>
+            <!-- 代码变更（diff）视图：独立于文件/浏览器页签 -->
+            <div class="diff-view" id="diffView" style="display:none">
+              <div class="dv-head">
+                <div>
+                  <div class="dv-title" id="dvTitle">新增 今日天气</div>
+                  <div class="dv-sub" id="dvSub"></div>
+                </div>
+                <button class="icon-btn" id="dvSideToggle" title="显示/隐藏变更文件列表"><svg class="i sm"><use href="#i-list"></use></svg></button>
+              </div>
+              <div class="dv-body">
+                <div class="dv-diff" id="dvDiff"></div>
+                <aside class="dv-side">
+                  <input id="dvFilter" placeholder="筛选变更文件" autocomplete="off">
+                  <div class="dv-side-list" id="dvSideList"></div>
+                </aside>
+              </div>
+            </div>
+            <div class="blank-panel" id="blankPanel" style="display:none">
+              <div class="bp-inner">
+                <div class="bp-title">新建标签页</div>
+                <div class="bp-actions">
+                  <button class="bp-btn" data-blank="file"><svg class="i"><use href="#i-file"></use></svg> 新建文件（从目录树选择）</button>
+                  <button class="bp-btn" data-blank="url"><svg class="i"><use href="#i-globe"></use></svg> 输入 URL 打开浏览器</button>
+                </div>
+              </div>
+            </div>
+            <div class="blank-panel" id="emptyState" style="display:none"></div>
+          </div>
+          <aside class="file-tree" id="fileTree">
+            <div class="ft-head">
+              <span class="ft-ws"><svg class="i sm"><use href="#i-branch"></use></svg> DaDaWX-main</span>
+              <input class="ft-search" id="ftSearch" placeholder="搜索文件" autocomplete="off" hidden>
+              <span class="ft-acts">
+                <button class="icon-btn" id="ftSearchBtn" title="搜索"><svg class="i sm"><use href="#i-search"></use></svg></button>
+                <button class="icon-btn" id="ftMoreBtn" title="更多"><svg class="i sm"><use href="#i-more"></use></svg></button>
+              </span>
+            </div>
+            <div class="ft-scroll" id="ftScroll"></div>
+          </aside>
+        </div>
+      </div>
+  </main>
+
+  <!-- ===== Menus (工作区/会话/技能/@/权限/模型/工作区选择/分支) ===== -->
+  <div class="menu" id="wsMenu">
+    <div class="menu-item" data-ws-op="pin"><span class="ic"><svg class="i"><use href="#i-pin"></use></svg></span>置顶工作区</div>
+    <div class="menu-item" data-ws-op="rename"><span class="ic"><svg class="i"><use href="#i-edit"></use></svg></span>重命名工作区</div>
+    <div class="menu-sep"></div>
+    <div class="menu-item danger" data-ws-op="remove"><span class="ic"><svg class="i"><use href="#i-remove"></use></svg></span>从项目列表移除</div>
+  </div>
+
+  <div class="menu" id="convMenu">
+    <div class="menu-item" data-conv-op="pin"><span class="ic"><svg class="i"><use href="#i-pin"></use></svg></span>置顶</div>
+    <div class="menu-item" data-conv-op="share"><span class="ic"><svg class="i"><use href="#i-share"></use></svg></span>分享</div>
+    <div class="menu-item" data-conv-op="rename"><span class="ic"><svg class="i"><use href="#i-edit"></use></svg></span>重命名</div>
+    <div class="menu-sep"></div>
+    <div class="menu-item danger" data-conv-op="delete"><span class="ic"><svg class="i"><use href="#i-trash"></use></svg></span>删除</div>
+  </div>
+
+  <div class="menu" id="skillMenu">
+    <input class="menu-search" placeholder="搜索技能 / 套件…" id="skillSearch">
+    <div class="menu-title">Code 模式技能</div>
+    <div id="skillList"></div>
+  </div>
+
+  <div class="menu" id="atMenu">
+    <input class="menu-search" placeholder="搜索工作区文件…" id="atSearch">
+    <div id="atList"></div>
+  </div>
+
+  <div class="menu" id="permMenu">
+    <div class="menu-item check" data-perm="手动确认" data-icon="shield"><span class="ic"><svg class="i"><use href="#i-shield"></use></svg></span>手动确认<svg class="i sm chk"><use href="#i-check"></use></svg></div>
+    <div class="menu-item check" data-perm="自动确认" data-icon="shield-check"><span class="ic"><svg class="i"><use href="#i-shield-check"></use></svg></span>自动确认<svg class="i sm chk"><use href="#i-check"></use></svg></div>
+    <div class="menu-item check" data-perm="完全自动" data-icon="zap"><span class="ic"><svg class="i"><use href="#i-zap"></use></svg></span>完全自动<svg class="i sm chk"><use href="#i-check"></use></svg></div>
+  </div>
+
+  <div class="menu" id="modelMenu">
+    <div class="menu-item check sel" data-model="快速" data-icon="zap"><span class="ic"><svg class="i"><use href="#i-zap"></use></svg></span>快速<svg class="i sm chk"><use href="#i-check"></use></svg></div>
+    <div class="menu-item check" data-model="均衡" data-icon="half"><span class="ic"><svg class="i"><use href="#i-half"></use></svg></span>均衡<svg class="i sm chk"><use href="#i-check"></use></svg></div>
+    <div class="menu-item check" data-model="强力" data-icon="diamond"><span class="ic"><svg class="i"><use href="#i-diamond"></use></svg></span>强力<svg class="i sm chk"><use href="#i-check"></use></svg></div>
+    <div class="menu-sep"></div>
+    <div class="menu-item has-sub" id="specifyModel" data-icon="gear"><span class="ic"><svg class="i"><use href="#i-gear"></use></svg></span>指定模型<svg class="i sm sub-arrow"><use href="#i-chevron-r"></use></svg></div>
+  </div>
+
+  <!-- 指定模型：右侧展开的子菜单 -->
+  <div class="menu" id="modelSubMenu">
+    <div class="menu-title">选择指定模型</div>
+    <div class="menu-item check" data-spec="ERNIE 4.5 Turbo"><span class="ic"><svg class="i"><use href="#i-diamond"></use></svg></span>ERNIE 4.5 Turbo<svg class="i sm chk"><use href="#i-check"></use></svg></div>
+    <div class="menu-item check" data-spec="ERNIE X1"><span class="ic"><svg class="i"><use href="#i-diamond"></use></svg></span>ERNIE X1<svg class="i sm chk"><use href="#i-check"></use></svg></div>
+    <div class="menu-item check" data-spec="DeepSeek-V4"><span class="ic"><svg class="i"><use href="#i-diamond"></use></svg></span>DeepSeek-V4<svg class="i sm chk"><use href="#i-check"></use></svg></div>
+    <div class="menu-item check" data-spec="Claude Sonnet 4.5"><span class="ic"><svg class="i"><use href="#i-diamond"></use></svg></span>Claude Sonnet 4.5<svg class="i sm chk"><use href="#i-check"></use></svg></div>
+    <div class="menu-item check" data-spec="GPT-5"><span class="ic"><svg class="i"><use href="#i-diamond"></use></svg></span>GPT-5<svg class="i sm chk"><use href="#i-check"></use></svg></div>
+  </div>
+
+
+  <div class="menu" id="wsSelMenu">
+    <div class="menu-title">最近工作区</div>
+    <div id="wsRecent"></div>
+    <div class="menu-sep"></div>
+    <div class="menu-item" data-ws-sel="__new"><span class="ic"><svg class="i"><use href="#i-plus"></use></svg></span>新建工作区</div>
+    <div class="menu-item" data-ws-sel="__local"><span class="ic"><svg class="i"><use href="#i-folder"></use></svg></span>选择本地文件夹…</div>
+  </div>
+
+  <div class="menu" id="branchMenu">
+    <input class="menu-search" placeholder="搜索分支…" id="branchSearch">
+    <div class="menu-title">本地分支</div>
+    <div id="branchLocal"></div>
+    <div class="menu-sep"></div>
+    <div class="menu-item" data-branch="__new"><span class="ic"><svg class="i"><use href="#i-plus"></use></svg></span>新建分支…</div>
+  </div>
+
+  <div class="menu" id="historyMenu">
+    <div class="menu-title">历史输入（本会话）</div>
+    <div id="historyList"></div>
+  </div>
+
+  <!-- 目录树标题：更多（打开本地文件夹） -->
+  <div class="menu" id="ftMoreMenu">
+    <div class="menu-item" data-ftmore="open"><span class="ic"><svg class="i"><use href="#i-folder"></use></svg></span>打开本地文件夹</div>
+  </div>
+
+  <!-- 产物区：文件/文件夹右键菜单 -->
+  <div class="menu ctx-menu" id="ftCtxMenu">
+    <div class="menu-item" data-ctx="add"><span class="ic"><svg class="i"><use href="#i-plus"></use></svg></span>添加到会话</div>
+    <div class="menu-item" id="ctxOpenBrowser" data-ctx="browser"><span class="ic"><svg class="i"><use href="#i-globe"></use></svg></span>用外部浏览器打开</div>
+  </div>
+
+  <!-- ===== Modals ===== -->
+  <div class="mask" id="confirmMask">
+    <div class="modal">
+      <h3><svg class="i lg warn-ic"><use href="#i-alert"></use></svg><span id="confirmTitle">确认操作</span></h3>
+      <p id="confirmText"></p>
+      <div class="modal-actions">
+        <button class="mbtn" id="confirmCancel">取消</button>
+        <button class="mbtn danger" id="confirmOk">确认</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="mask" id="renameMask">
+    <div class="modal">
+      <h3 id="renameTitle">重命名</h3>
+      <input id="renameInput" placeholder="请输入名称">
+      <div class="modal-actions">
+        <button class="mbtn" id="renameCancel">取消</button>
+        <button class="mbtn primary" id="renameOk">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="mask" id="commitMask">
+    <div class="modal commit-modal">
+      <div class="cm-head">
+        <h3><span class="info-ic"><svg class="i sm"><use href="#i-info"></use></svg></span>切换分支前提交更改</h3>
+        <button class="icon-btn" id="commitClose"><svg class="i"><use href="#i-x"></use></svg></button>
+      </div>
+      <p class="cm-desc">切换到 <span class="br-chip" id="commitTarget">master</span> 将覆盖以下 <span id="commitCount">2</span> 个文件中的未提交更改。</p>
+      <div class="commit-box" id="commitFiles"></div>
+      <div class="cm-label">提交信息</div>
+      <textarea id="commitMsg" class="cm-textarea" placeholder="提交信息（留空则自动生成）"></textarea>
+      <div class="modal-actions">
+        <button class="mbtn" id="commitCancel">取消</button>
+        <button class="mbtn primary" id="commitOk">提交并切换分支</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+/* ---------------- 数据模型 ---------------- */
+const $ = (s,r=document)=>r.querySelector(s);
+const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
+const ic = (name,cls='')=>`<svg class="i ${cls}"><use href="#i-${name}"></use></svg>`;
+
+// 工作区 + 会话（会话按时间倒排，含状态：done/loading/unread/error）
+const workspaces = [
+  {id:'w1', name:'出行计划', pinned:false, collapsed:false, branches:['main','dev','feature/map'], branch:'main', gitInit:true,
+    convs:[{id:'c1', name:'没有任务', status:'done'}]},
+  {id:'w2', name:'会话数据分析', pinned:false, collapsed:false, branches:['main','analysis'], branch:'main', gitInit:true,
+    convs:[
+      {id:'c2', name:'抽取日志数据可视化成一个仪表盘', status:'loading'},
+      {id:'c3', name:'抽取日志数据可视化成一个报表', status:'unread'},
+    ]},
+];
+// 默认分组（未归属工作区），无 git
+const defaultConvs = [
+  {id:'d1', name:'AI行业热点：大模型、AI Agent 趋势', status:'error', active:true},
+  {id:'d2', name:'每天清理下载文件夹安装包', status:'done'},
+  {id:'d3', name:'新增今日天气模块', status:'done', kind:'diff'},   // 会话流含 diff 卡片
+];
+
+const skills = ['前端样式微调','项目理解','代码审查(CR)','单测生成','Figma 转代码','Mission 工作模式','文档生成','部署脚本'];
+const wsFiles = ['index.html','styles/main.css','src/app.js','src/router.js','package.json','README.md','utils/format.js'];
+const recentWs = ['出行计划','会话数据分析','电商中台','个人博客','数据大屏'];
+
+let state = {mode:'code', perm:'手动确认', model:'快速', ws:'', branch:'main', history:[], refs:[]};
+
+/* ---------------- 通用菜单/弹窗 ---------------- */
+function closeMenus(){ $$('.menu.open').forEach(m=>m.classList.remove('open')); }
+function openMenuAt(menu, anchor, align='left'){
+  closeMenus();
+  const r = anchor.getBoundingClientRect();
+  menu.classList.add('open');
+  const mw = menu.offsetWidth, mh = menu.offsetHeight;
+  let top = r.bottom+6, left = align==='right' ? r.right-mw : r.left;
+  if(top+mh > innerHeight) top = r.top-mh-6;            // 上翻
+  left = Math.max(8, Math.min(left, innerWidth-mw-8));
+  menu.style.top = top+'px'; menu.style.left = left+'px';
+}
+document.addEventListener('click', e=>{
+  if(!e.target.closest('.menu') && !e.target.closest('[data-keep]')) closeMenus();
+});
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),1800); }
+
+/* 二次确认弹窗（删除/移除/强制覆盖等高风险） */
+function confirmDialog(title, text, onOk){
+  $('#confirmTitle').textContent = title;
+  $('#confirmText').textContent = text;
+  $('#confirmMask').classList.add('open');
+  const ok=$('#confirmOk'), cancel=$('#confirmCancel');
+  const close=()=>$('#confirmMask').classList.remove('open');
+  ok.onclick=()=>{ close(); onOk&&onOk(); };
+  cancel.onclick=close;
+}
+/* 重命名弹窗 */
+function renameDialog(title, cur, onOk){
+  $('#renameTitle').textContent=title;
+  const inp=$('#renameInput'); inp.value=cur;
+  $('#renameMask').classList.add('open'); inp.focus(); inp.select();
+  const close=()=>$('#renameMask').classList.remove('open');
+  $('#renameOk').onclick=()=>{ const v=inp.value.trim(); if(v){close(); onOk(v);} };
+  $('#renameCancel').onclick=close;
+}
+
+/* ---------------- 渲染侧边栏 ---------------- */
+function statusIcon(st){
+  if(st==='loading') return '<span class="st loading" title="进行中"></span>';
+  if(st==='unread')  return '<span class="st unread" title="待查看"></span>';
+  if(st==='error')   return '<span class="st error" title="异常"></span>';
+  return '<span class="st"></span>';
+}
+function rowActs(kind){
+  return `<span class="row-acts">
+    ${kind==='ws'?`<button class="icon-btn" data-ws-new title="在此工作区新建会话">${ic('plus')}</button>`:''}
+    <button class="icon-btn" data-${kind}-more title="更多操作">${ic('more')}</button></span>`;
+}
+function renderTasks(){
+  const box=$('#taskTree'); box.innerHTML='';
+  const sorted=[...workspaces].sort((a,b)=>b.pinned-a.pinned);
+  sorted.forEach(w=>{
+    const el=document.createElement('div');
+    el.className='ws'+(w.collapsed?' collapsed':''); el.dataset.ws=w.id;
+    el.innerHTML=`<div class="ws-head" data-ws-toggle>
+        <span class="ic caret">${ic('chevron')}</span><span class="ic">${ic('folder')}</span>
+        <span class="name">${w.name}</span>
+        ${w.pinned?`<span class="pin">${ic('pin','sm')}</span>`:''}
+        ${rowActs('ws')}
+      </div>
+      <div class="ws-body">${w.convs.map(c=>convRow(c,true)).join('')}</div>`;
+    box.appendChild(el);
+  });
+}
+function convRow(c,indent){
+  return `<div class="conv${c.active?' active':''}" data-conv="${c.id}">
+    ${statusIcon(c.status)}<span class="label">${c.name}</span>${rowActs('conv')}</div>`;
+}
+function renderDefault(){
+  $('#convList').innerHTML = defaultConvs.map(c=>convRow(c,false)).join('');
+}
+renderTasks(); renderDefault();
+
+/* ---------------- 入口 tab：Work / Code 切换（列表隔离） ---------------- */
+$('#modeSeg').addEventListener('click', e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  $$('#modeSeg button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); state.mode=b.dataset.mode;
+  toast(`已切换到 ${state.mode==='code'?'Code':'Work'} 模式（会话列表相互隔离）`);
+});
+$$('.nav-item').forEach(n=>n.addEventListener('click',()=>toast('打开：'+n.dataset.track)));
+
+/* ---------------- 侧边栏收起/展开 ---------------- */
+$('#collapseBtn').onclick=()=>{ $('#sidebar').classList.add('collapsed'); $('#topbar').style.display='flex'; };
+$('#expandBtn').onclick=()=>{ $('#sidebar').classList.remove('collapsed'); $('#topbar').style.display='none'; };
+
+/* 分组折叠：列表 / 默认 */
+$$('[data-toggle]').forEach(g=>g.addEventListener('click',()=>{
+  $('#'+g.dataset.toggle).classList.toggle('collapsed');
+}));
+/* 折叠全部工作区（保留标题，收起会话） */
+$('[data-collapse-all]').addEventListener('click',e=>{
+  e.stopPropagation();
+  const anyOpen=workspaces.some(w=>!w.collapsed);
+  workspaces.forEach(w=>w.collapsed=anyOpen); renderTasks();
+});
+
+/* ---------------- 事件委托：工作区/会话行内操作 ---------------- */
+$('#taskTree').addEventListener('click', e=>{
+  const wsEl=e.target.closest('.ws'); if(!wsEl) return;
+  const w=workspaces.find(x=>x.id===wsEl.dataset.ws);
+  if(e.target.closest('[data-ws-new]')){ e.stopPropagation();
+    newSession(w); return; }
+  if(e.target.closest('[data-ws-more]')){ e.stopPropagation();
+    openWsMenu(e.target.closest('[data-ws-more]'), w); return; }
+  if(e.target.closest('[data-conv-more]')){ e.stopPropagation();
+    const cid=e.target.closest('.conv').dataset.conv;
+    openConvMenu(e.target.closest('[data-conv-more]'), w, w.convs.find(c=>c.id===cid)); return; }
+  const conv=e.target.closest('.conv');
+  if(conv){ selectConv(conv.dataset.conv, w); return; }
+  if(e.target.closest('[data-ws-toggle]')){ w.collapsed=!w.collapsed; renderTasks(); }
+});
+$('#convList').addEventListener('click', e=>{
+  const row=e.target.closest('.conv'); if(!row) return;
+  const c=defaultConvs.find(x=>x.id===row.dataset.conv);
+  if(e.target.closest('[data-conv-more]')){ e.stopPropagation();
+    openConvMenu(e.target.closest('[data-conv-more]'), null, c); return; }
+  selectConv(c.id, null);
+});
+
+/* 会话选中 + 异常/待查看状态进入即消除 */
+function selectConv(id, w){
+  [...workspaces.flatMap(x=>x.convs), ...defaultConvs].forEach(c=>c.active=false);
+  const c=(w?w.convs:defaultConvs).find(x=>x.id===id);
+  if(c){ c.active=true;
+    if(c.status==='unread'||c.status==='error'){
+      if(c.status==='error') toast('项目路径异常：工作空间目录可能被移动或删除');
+      c.status='done';
+    }
+    if(c.status!=='error') openSession(c);
+  }
+  renderTasks(); renderDefault();
+}
+/* 工作区/会话新建 */
+function newSession(w){
+  toast(w ? `新建会话，已预填充工作区「${w.name}」· 分支 ${w.branch}` : '新建会话（未选中工作区，将自动创建独立工作空间）');
+}
+$('#newConvBtn').onclick=e=>{ e.stopPropagation(); newSession(null); };
+$('#searchBtn').onclick=e=>{ e.stopPropagation(); toast('模糊搜索会话名（输入关键词过滤）'); };
+
+/* 工作区层级操作菜单 */
+let curWs=null, curConv=null, curConvWs=null;
+function openWsMenu(anchor, w){ curWs=w;
+  const pin=$('#wsMenu [data-ws-op="pin"]');
+  pin.innerHTML=`<span class="ic">${ic('pin')}</span>${w.pinned?'取消置顶':'置顶工作区'}`;
+  openMenuAt($('#wsMenu'), anchor, 'left');
+}
+$('#wsMenu').addEventListener('click',e=>{
+  const it=e.target.closest('[data-ws-op]'); if(!it) return; closeMenus();
+  const op=it.dataset.wsOp, w=curWs;
+  if(op==='pin'){ w.pinned=!w.pinned; renderTasks(); toast(w.pinned?'已置顶工作区':'已取消置顶'); }
+  if(op==='rename') renameDialog('重命名工作区', w.name, v=>{ w.name=v; renderTasks(); toast('已重命名，已同步至关联会话'); });
+  if(op==='remove') confirmDialog('从项目列表移除',
+    `将工作区「${w.name}」从项目列表移除？仅隐藏展示，不删除本地文件、云端数据及历史会话，可重新添加恢复。`,
+    ()=>{ const i=workspaces.indexOf(w); workspaces.splice(i,1); renderTasks(); toast('已移除工作区'); });
+});
+
+/* 会话层级操作菜单 */
+function openConvMenu(anchor, w, c){ curConv=c; curConvWs=w;
+  const pin=$('#convMenu [data-conv-op="pin"]');
+  pin.innerHTML=`<span class="ic">${ic('pin')}</span>${c.pinned?'取消置顶':'置顶'}`;
+  openMenuAt($('#convMenu'), anchor, 'left');
+}
+$('#convMenu').addEventListener('click',e=>{
+  const it=e.target.closest('[data-conv-op]'); if(!it) return; closeMenus();
+  const op=it.dataset.convOp, c=curConv, list=curConvWs?curConvWs.convs:defaultConvs;
+  if(op==='pin'){ c.pinned=!c.pinned; toast(c.pinned?'已置顶会话':'已取消置顶'); }
+  if(op==='share') toast('已生成分享链接（含内容/配置/执行记录，不含本地私有文件）');
+  if(op==='rename') renameDialog('重命名会话', c.name, v=>{ c.name=v; renderTasks(); renderDefault(); });
+  if(op==='delete') confirmDialog('删除会话',
+    `删除会话「${c.name}」？将清空该会话所有对话记录与执行日志，不影响所属工作空间及 Git 配置。`,
+    ()=>{ const i=list.indexOf(c); list.splice(i,1); renderTasks(); renderDefault(); toast('已删除会话'); });
+});
+
+/* ---------------- 输入框：+ / 技能菜单 ---------------- */
+function fillMenu(el, arr, render){ el.innerHTML=arr.map(render).join('')||'<div class="menu-item">无匹配结果</div>'; }
+$('#plusBtn').setAttribute('data-keep','1');
+$('#plusBtn').onclick=e=>{ e.stopPropagation();
+  fillMenu($('#skillList'), skills, s=>`<div class="menu-item" data-skill="${s}"><span class="ic">${ic('box')}</span>${s}</div>`);
+  openMenuAt($('#skillMenu'), $('#plusBtn')); $('#skillSearch').value=''; $('#skillSearch').focus();
+};
+$('#skillSearch').oninput=e=>{ const q=e.target.value.trim();
+  fillMenu($('#skillList'), skills.filter(s=>s.includes(q)), s=>`<div class="menu-item" data-skill="${s}"><span class="ic">${ic('box')}</span>${s}</div>`); };
+$('#skillMenu').addEventListener('click',e=>{ const it=e.target.closest('[data-skill]'); if(!it)return;
+  insertToken('/'+it.dataset.skill+' '); closeMenus(); });
+
+/* @ 文件引用（菜单逻辑保留，供拖拽/产物区“添加到会话”复用） */
+$('#atSearch').oninput=e=>{ const q=e.target.value.trim();
+  fillMenu($('#atList'), wsFiles.filter(f=>f.includes(q)), f=>`<div class="menu-item" data-file="${f}"><span class="ic">${ic('file')}</span>${f}</div>`); };
+$('#atMenu').addEventListener('click',e=>{ const it=e.target.closest('[data-file]'); if(!it)return;
+  addRef(it.dataset.file); closeMenus(); $('#promptInput').focus(); });
+function insertToken(t){ const ta=$('#promptInput'); ta.value+=t; ta.focus(); syncSend(); }
+
+/* 输入框内的引用上下文标签（@文件 / 拖拽文件） */
+function addRef(name){ if(!state.refs.includes(name)) state.refs.push(name); renderRefs(); }
+function removeRef(name){ state.refs=state.refs.filter(x=>x!==name); renderRefs(); }
+function renderRefs(){
+  const box=$('#ctxChips');
+  box.classList.toggle('show', state.refs.length>0);
+  box.innerHTML=state.refs.map(n=>`<span class="ctx-chip" data-ref="${n}">
+    ${ic('file','sm')}<span class="nm">${n}</span>
+    <span class="rm" data-rm="${n}">${ic('remove','sm')}</span></span>`).join('');
+  syncSend();
+}
+$('#ctxChips').addEventListener('click',e=>{ const r=e.target.closest('[data-rm]'); if(r) removeRef(r.dataset.rm); });
+
+/* 权限（三档） */
+$('#permBtn').setAttribute('data-keep','1');
+$('#permBtn').onclick=e=>{ e.stopPropagation();
+  $$('#permMenu .menu-item').forEach(m=>m.classList.toggle('sel', m.dataset.perm===state.perm));
+  openMenuAt($('#permMenu'), $('#permBtn')); };
+$('#permMenu').addEventListener('click',e=>{ const it=e.target.closest('[data-perm]'); if(!it)return;
+  state.perm=it.dataset.perm; $('#permLabel').textContent=state.perm;
+  $('#permIcon use').setAttribute('href','#i-'+it.dataset.icon); closeMenus(); });
+
+/* 模型（三档 + 指定模型子菜单） */
+$('#modelBtn').setAttribute('data-keep','1');
+$('#modelBtn').onclick=e=>{ e.stopPropagation();
+  $('#modelSubMenu').classList.remove('open');
+  $$('#modelMenu .menu-item[data-model]').forEach(m=>m.classList.toggle('sel', m.dataset.model===state.model));
+  openMenuAt($('#modelMenu'), $('#modelBtn'), 'right'); };
+$('#modelMenu').addEventListener('click',e=>{ const it=e.target.closest('[data-model]'); if(!it)return;
+  setModel(it.dataset.model, it.dataset.icon); $('#modelSubMenu').classList.remove('open'); closeMenus(); });
+function setModel(name, icon){
+  state.model=name; $('#modelLabel').textContent=name;
+  $('#modelIcon use').setAttribute('href','#i-'+(icon||'gear'));
+}
+/* 指定模型 → 右侧展开子菜单（悬浮或点击均可） */
+function openModelSub(){
+  const anchor=$('#specifyModel'), r=anchor.getBoundingClientRect(), menu=$('#modelSubMenu');
+  $$('#modelSubMenu [data-spec]').forEach(m=>m.classList.toggle('sel', m.dataset.spec===state.model));
+  menu.classList.add('open');
+  const mw=menu.offsetWidth, mh=menu.offsetHeight;
+  let left=r.right+4; if(left+mw>innerWidth) left=r.left-mw-4;
+  let top=Math.min(r.top, innerHeight-mh-8);
+  menu.style.left=left+'px'; menu.style.top=top+'px';
+}
+$('#specifyModel').addEventListener('mouseenter', openModelSub);
+$('#specifyModel').addEventListener('click', e=>{ e.stopPropagation(); openModelSub(); });
+$('#modelSubMenu').setAttribute('data-keep','1');
+$('#modelSubMenu').addEventListener('click',e=>{ const it=e.target.closest('[data-spec]'); if(!it)return;
+  setModel(it.dataset.spec, 'gear'); closeMenus(); $('#modelSubMenu').classList.remove('open'); });
+
+
+/* 选择本地工作区（最近 5 个 + 新建 + 选择本地） */
+$('#wsBtn').setAttribute('data-keep','1');
+$('#wsBtn').onclick=e=>{ e.stopPropagation();
+  $('#wsRecent').innerHTML=recentWs.slice(0,5).map(w=>`<div class="menu-item" data-ws-sel="${w}"><span class="ic">${ic('folder')}</span>${w}</div>`).join('');
+  openMenuAt($('#wsSelMenu'), $('#wsBtn')); };
+$('#wsSelMenu').addEventListener('click',e=>{ const it=e.target.closest('[data-ws-sel]'); if(!it)return; closeMenus();
+  const v=it.dataset.wsSel;
+  if(v==='__new'){ renameDialog('新建工作区（文件夹名）','', name=>{ setWs(name); toast('已调用系统创建文件夹：'+name); }); return; }
+  if(v==='__local'){ toast('打开系统文件夹选择窗口…'); setWs('本地文件夹'); return; }
+  setWs(v);
+});
+function setWs(name){ state.ws=name; $('#wsLabel').textContent=name;
+  const w=workspaces.find(x=>x.name===name);
+  // Git 前置判断：无 git 环境隐藏分支控件
+  const has = w? w.gitInit : true;
+  $('#branchBtn').classList.toggle('hidden', !has);
+  if(w){ state.branch=w.branch; $('#branchLabel').textContent=w.branch; }
+  toast('已选择工作区：'+name+'（会话汇总至该空间）');
+}
+
+/* Git 分支：切换/新建；切换前扫描变更 → commit 弹窗 */
+let localBranches=['main','dev','feature/map'];
+$('#branchBtn').setAttribute('data-keep','1');
+$('#branchBtn').onclick=e=>{ e.stopPropagation();
+  renderBranches(localBranches); openMenuAt($('#branchMenu'), $('#branchBtn'));
+  $('#branchSearch').value=''; $('#branchSearch').focus(); };
+function renderBranches(arr){
+  $('#branchLocal').innerHTML=arr.map(b=>`<div class="menu-item check ${b===state.branch?'sel':''}" data-branch="${b}"><span class="ic">${ic('branch')}</span>${b}${ic('check','sm chk')}</div>`).join('');
+}
+$('#branchSearch').oninput=e=>renderBranches(localBranches.filter(b=>b.includes(e.target.value.trim())));
+$('#branchMenu').addEventListener('click',e=>{ const it=e.target.closest('[data-branch]'); if(!it)return;
+  const v=it.dataset.branch;
+  if(v==='__new'){ closeMenus(); renameDialog('新建分支','feature/', name=>{ localBranches.push(name); switchBranch(name,true); }); return; }
+  if(v===state.branch){ closeMenus(); return; }
+  closeMenus(); switchBranch(v,false);
+});
+/* 当前分支的未提交变更（模拟）。为空则视为无变更，可直接切换 */
+let dirtyChanges=[
+  {f:'package.json', ic:'json', color:'#cb3837', add:2, del:18},
+  {f:'svgo.config.js', ic:'jsfile', color:'#c9b400', add:1, del:6},
+];
+function doSwitch(target, isNew){
+  state.branch=target; $('#branchLabel').textContent=target;
+  toast((isNew?'已创建并切换到分支 ':'已切换到分支 ')+target);
+}
+function switchBranch(target, isNew){
+  // 切换前判断当前分支是否有未提交变更
+  if(!dirtyChanges.length){ doSwitch(target, isNew); return; }  // 无变更 → 直接切换
+  $('#commitTarget').textContent=target;
+  $('#commitCount').textContent=dirtyChanges.length;
+  $('#commitFiles').innerHTML=dirtyChanges.map(d=>`<div class="file">
+    <span class="fname"><svg class="i sm" style="color:${d.color}"><use href="#i-${d.ic}"></use></svg>${d.f}</span>
+    <span><span class="add">+${d.add}</span> <span class="del">-${d.del}</span></span></div>`).join('');
+  $('#commitMsg').value='';
+  $('#commitMask').classList.add('open');
+  const close=()=>$('#commitMask').classList.remove('open');
+  $('#commitCancel').onclick=close;
+  $('#commitClose').onclick=close;
+  $('#commitOk').onclick=()=>{ close();
+    const msg=$('#commitMsg').value.trim() || `chore: save work before switching to ${target}`;
+    dirtyChanges=[];                     // 提交后当前分支变为干净
+    toast('已提交（'+msg+'）并切换到分支 '+target);
+    doSwitch(target, isNew);
+};
+}
+
+/* 代码变更（diff）数据：模拟「新增 今日天气」一次提交的变更 */
+const DIFF = {
+  title:'新增 今日天气',
+  dir:'Users/tanzeng/Library/…',
+  files:[{ name:'daily_horoscope.html', path:'./daily_horoscope.html', hash:'…539b35c5f/', add:183, del:0,
+    hunks:[
+      [ {n:196,t:'add',s:'  .weather-loading, .weather-error {'},
+        {n:197,t:'add',s:'    text-align: center;'},
+        {n:198,t:'add',s:'    font-size: 0.85em;'},
+        {n:199,t:'add',s:'    color: #7878a0;'},
+        {n:200,t:'add',s:'    padding: 20px;'},
+        {n:201,t:'add',s:'  }'},
+        {n:202,t:'add',s:'  .weather-error { color: #c08898; }'},
+        {n:203,t:'add',s:'  .weather-error button {'},
+        {n:204,t:'add',s:'    margin-top: 8px;'},
+        {n:205,t:'add',s:'    background: none;'},
+        {n:206,t:'add',s:'    border: 1px solid rgba(255,255,255,0.3);'},
+        {n:207,t:'add',s:'    color: #e8e8e8;'},
+        {n:208,t:'add',s:'    padding: 4px 14px;'},
+        {n:209,t:'add',s:'    border-radius: 12px;'},
+        {n:210,t:'add',s:'    cursor: pointer;'},
+        {n:211,t:'add',s:'    font-size: 0.8em;'},
+        {n:212,t:'add',s:'  }'},
+        {n:213,t:'add',s:'  .weather-error button:hover { border-color: #fff; }'},
+        {n:214,t:'add',s:'  @media (max-width: 560px) {'},
+        {n:215,t:'add',s:'    .weather { flex-direction: column; align-items: center; }'},
+        {n:216,t:'add',s:'    .weather-right { grid-template-columns: repeat(2, 1fr); }'},
+        {n:217,t:'add',s:'  }'},
+        {n:218,t:'add',s:''},
+        {o:150,n:219,t:'ctx',s:'  footer {'},
+        {o:151,n:220,t:'ctx',s:'    text-align: center;'},
+        {o:152,n:221,t:'ctx',s:'    color: #606080;'} ],
+      [ {o:164,n:233,t:'ctx',s:'      <a href="zodiac_12.html">◇ 星座图鉴</a>'},
+        {o:165,n:234,t:'ctx',s:'    </nav>'},
+        {o:166,n:235,t:'ctx',s:'    <div class="overview" id="overview"></div>'},
+        {n:236,t:'add',s:'    <div class="weather" id="weather">'},
+        {n:237,t:'add',s:'      <div class="weather-loading">* 正在获取今日天气…</div>'},
+        {n:238,t:'add',s:'    </div>'},
+        {o:167,n:239,t:'ctx',s:'  </header>'} ],
+    ]}],
+};
+
+/* 历史输入（菜单逻辑保留，暂无触发入口） */
+$('#historyMenu').addEventListener('click',e=>{ const it=e.target.closest('[data-hist]'); if(!it)return;
+  if(state.history.length){ $('#promptInput').value=state.history[+it.dataset.hist]; syncSend(); } closeMenus(); });
+
+/* ---------------- 场景卡片：预填充 prompt ---------------- */
+$('#quickCards').addEventListener('click',e=>{ const q=e.target.closest('.q'); if(!q)return;
+  const ta=$('#promptInput'); ta.value=q.dataset.prompt; ta.focus(); syncSend(); });
+
+/* ---------------- 发送态 + 拖拽文件 ---------------- */
+const ta=$('#promptInput');
+function syncSend(){ $('#sendBtn').classList.toggle('ready', ta.value.trim().length>0 || state.refs.length>0); }
+ta.addEventListener('input', syncSend);
+ta.addEventListener('keydown',e=>{ if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)) send(); });
+$('#sendBtn').onclick=send;
+function send(){ const v=ta.value.trim(); if(!v && !state.refs.length) return;
+  if(v) state.history.unshift(v);
+  const refTip=state.refs.length?' · 引用['+state.refs.join('、')+']':'';
+  toast('已发送 · 权限['+state.perm+'] · 模型['+state.model+']'+(state.ws?' · 工作区['+state.ws+']':'')+refTip);
+  ta.value=''; state.refs=[]; renderRefs(); syncSend();
+}
+const comp=$('#composer');
+['dragover','dragenter'].forEach(ev=>comp.addEventListener(ev,e=>{e.preventDefault();comp.classList.add('drag');}));
+['dragleave','drop'].forEach(ev=>comp.addEventListener(ev,e=>{e.preventDefault();comp.classList.remove('drag');}));
+comp.addEventListener('drop',e=>{ const f=[...e.dataTransfer.files].map(x=>x.name);
+  if(f.length){ f.forEach(addRef); toast('已作为上下文引用：'+f.join('、')); } });
+
+/* ================= 产物交付区（会话视图） ================= */
+const APPJSON = `{
+  "pages": [
+    "pages/home/home",
+    "pages/index/index",
+    "pages/diagnose/diagnose",
+    "pages/analyzing/analyzing",
+    "pages/report/report",
+    "pages/report-detail/report-detail",
+    "pages/hairstyle/hairstyle",
+    "pages/outfit/outfit",
+    "pages/makeup/makeup",
+    "pages/mine/mine",
+    "pages/reports/reports",
+    "pages/favorites/favorites",
+    "pages/consult-publish/consult-publish",
+    "pages/consult-analyzing/consult-analyzing",
+    "pages/consult-result/consult-result",
+    "pages/beauty-plan/beauty-plan"
+  ],
+  "window": {
+    "backgroundTextStyle": "dark",
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "navigationBarTitleText": "",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#FFFFFF"
+  }
+}`;
+const FILES = {
+  'app.json':{ic:'json',lang:'json',content:APPJSON,active:11},
+  'app.js':{ic:'jsfile',lang:'js',content:'App({\n  onLaunch() {\n    console.log("DaDaWX launched");\n  },\n  globalData: { userInfo: null }\n})'},
+  'README.md':{ic:'md',lang:'md',content:'# DaDaWX\n\nAI 全球热点分布小程序\n\n- 覆盖 Claude、GPT 全系列产品\n- 新闻素材驱动\n\n## 快速开始\n\n1. 安装依赖\n2. 运行开发者工具'},
+  'index.html':{ic:'globe',lang:'html',content:'<!doctype html>\n<html lang="zh-CN">\n<head>\n  <meta charset="utf-8">\n  <title>AI 全球热点分布</title>\n  <style>\n    body{margin:0;font-family:-apple-system,"PingFang SC",sans-serif;background:#0b1220;color:#e8edf5}\n    header{padding:28px 24px;text-align:center;background:linear-gradient(135deg,#1e3a8a,#2f6bff)}\n    header h1{margin:0;font-size:24px}\n    header p{margin:8px 0 0;opacity:.85;font-size:14px}\n    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;padding:20px 24px}\n    .card{background:#131a26;border:1px solid #222c3a;border-radius:12px;padding:16px}\n    .card .n{font-size:26px;font-weight:800;color:#4f8bff}\n    .card .l{font-size:13px;color:#8a93a3;margin-top:6px}\n    footer{text-align:center;color:#8a93a3;font-size:12px;padding:18px}\n  </style>\n</head>\n<body>\n  <header>\n    <h1>AI 全球热点分布</h1>\n    <p>覆盖 Claude、GPT 全系列产品 · 新闻素材驱动</p>\n  </header>\n  <section class="grid">\n    <div class="card"><div class="n">283%</div><div class="l">上半年营收同比增长</div></div>\n    <div class="card"><div class="n">$8亿</div><div class="l">8月 ARR 突破</div></div>\n    <div class="card"><div class="n">80%</div><div class="l">B 端占比</div></div>\n    <div class="card"><div class="n">16</div><div class="l">已上线页面模块</div></div>\n  </section>\n  <footer>Powered by DaDaWX · 内容由 AI 生成</footer>\n</body>\n</html>'},
+};
+const tree=[
+  {t:'dir',n:'server',kids:[{t:'f',n:'index.js',ic:'jsfile'}]},
+  {t:'dir',n:'styles',kids:[{t:'f',n:'common.wxss',ic:'file'}]},
+  {t:'dir',n:'templates',kids:[{t:'f',n:'card.wxml',ic:'file'}]},
+  {t:'dir',n:'utils',kids:[{t:'f',n:'util.js',ic:'jsfile'}]},
+  {t:'dir',n:'vidio',kids:[{t:'f',n:'intro.mp4',ic:'video'}]},
+  {t:'f',n:'.gitignore',ic:'file'},
+  {t:'f',n:'26112000003642200.png',ic:'image'},
+  {t:'f',n:'百度文心快码2026 6月.png',ic:'image'},
+  {t:'f',n:'流量-订单数据明细-b.xlsx',ic:'file'},
+  {t:'f',n:'录屏2026-08-25 23.mov',ic:'video'},
+  {t:'f',n:'沙发.pptx',ic:'ppt'},
+  {t:'f',n:'index.html',ic:'globe'},
+  {t:'f',n:'app.js',ic:'jsfile'},{t:'f',n:'app.json',ic:'json'},{t:'f',n:'app.wxss',ic:'file'},
+  {t:'f',n:'PMTuzi_DaDaWX_转.pptx',ic:'ppt'},{t:'f',n:'prd',ic:'file'},
+  {t:'f',n:'project.config.json',ic:'json'},{t:'f',n:'project.private.config.json',ic:'json'},
+  {t:'f',n:'README.md',ic:'md'},{t:'f',n:'sitemap.json',ic:'json'},
+];
+let tabs=[], activeTab='';
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+let treeFilter='';
+function renderTree(){
+  const q=treeFilter;
+  const match=n=>n.n.toLowerCase().includes(q);
+  const rowsOf=(arr,depth)=>arr.map(node=>{
+    if(node.t==='dir'){
+      const kidsHtml=rowsOf(node.kids,depth+1);
+      if(q && !match(node) && !kidsHtml) return '';   // 搜索时：子树无命中则整目录隐藏
+      const open = q ? true : node.open;              // 搜索时自动展开命中目录
+      const kids=`<div class="ft-children" ${open?'':'hidden'}>${kidsHtml}</div>`;
+      return `<div class="ft-row ${open?'open':''}" data-dir="${node.n}"><span class="tw">${ic('chevron-r','sm')}</span><span class="fi">${ic('folder','sm')}</span>${node.n}</div>${kids}`;
+    }
+    if(q && !match(node)) return '';
+    return `<div class="ft-row ${node.n===activeTab?'active':''}" data-file="${node.n}"><span class="tw"></span><span class="fi">${ic(node.ic,'sm')}</span>${node.n}</div>`;
+  }).join('');
+  $('#ftScroll').innerHTML=`${rowsOf(tree,0)}`;
+}
+
+/* 打开会话 → 展示会话视图 + 默认打开 app.json */
+function openSession(c){
+  $('.main').classList.add('session','art-open');   // 会话默认展开产物区
+  $('#sessTitle').textContent = c && c.name ? c.name : '完成 AI 全球热点分布小程序的设计';
+  const isDiff = !!(c && c.kind==='diff');          // 该会话的会话流带 diff 卡片
+  $('#diffCard').style.display = isDiff ? 'block' : 'none';
+  $('#jumpCard').style.display = isDiff ? 'none' : '';
+  if(isDiff){ openDiffTab(); return; }              // 默认在右侧展示「代码变更」
+  if(!tabs.length) openFile('app.json', true); else renderTabs();
+  renderTree();
+}
+function exitSession(){ $('.main').classList.remove('session','art-open','art-max','tree-hidden'); }
+/* 折叠/展开产物区（会话头与首页共用） */
+function toggleArt(){
+  const opening = !$('.main').classList.contains('art-open');
+  $('.main').classList.toggle('art-open');
+  if(opening && !tabs.length) drawEmpty();
+}
+
+/* 页签：打开/聚焦，不重复创建
+   pinned=false（目录树单击浏览）：在“当前活动页签”内就地替换展示，不新开、也不跑到其它页签；
+   pinned=true（双击 / 对话区文件路径 / 跳转卡片）：固定为独立页签。
+   若文件已在某页签打开：直接聚焦该页签，禁止重复创建。 */
+function openFile(name, pinned=false){
+  if(!FILES[name]){ FILES[name]={ic:(tree.find(n=>n.n===name)||{}).ic||'file',lang:'txt',content:'// '+name+'\n（该文件类型为占位示例）'}; }
+  if(tabs.includes(name)){
+    activeTab=name;                                   // 已打开 → 聚焦
+  } else if(!pinned && tabs.includes(activeTab)){
+    tabs[tabs.indexOf(activeTab)]=name; activeTab=name; // 在当前页签内就地替换
+  } else {
+    tabs.push(name); activeTab=name;                  // 新建独立页签
+  }
+  renderTabs(); renderEditor(); renderTree();
+}
+function closeTab(name){
+  tabs=tabs.filter(t=>t!==name);
+  if(activeTab===name) activeTab=tabs[tabs.length-1]||'';
+  renderTabs();
+  if(activeTab){ renderEditor(); } else { drawEmpty(); }  // 全部页签关闭 → 回到初始态
+  renderTree();
+}
+/* 初始态：无已打开页签时，展示与「新建页签」一致的空白页，目录树默认打开 */
+function drawEmpty(){
+  $('#crumb').textContent='新标签页';
+  $('.art-toolbar').style.display='';
+  $('#previewToggle').style.display='none';
+  $('#openIdeBtn').style.display='none';
+  $('.ai-gen').style.display='none';
+  $('#codeArea').style.display='none'; $('#codeArea').innerHTML='';
+  $('#browserView').style.display='none';
+  $('#diffView').style.display='none';
+  $('#blankPanel').style.display='flex';
+  showTree();
+}
+function renderTabs(){
+  $('#tabBar').innerHTML=tabs.map(t=>`<div class="tab ${t===activeTab?'active':''}" data-tab="${t}">
+    ${ic(FILES[t].ic,'sm')}<span>${FILES[t].title||t}</span><span class="x" data-close="${t}">${ic('remove','sm')}</span></div>`).join('');
+}
+function hlJSON(code){
+  return esc(code)
+    .replace(/&quot;([^&]*?)&quot;(\s*:)/g,'<span class="tok-key">&quot;$1&quot;</span>$2')
+    .replace(/:\s*&quot;([^&]*?)&quot;/g,': <span class="tok-str">&quot;$1&quot;</span>')
+    .replace(/([{}\[\],])/g,'<span class="tok-punc">$1</span>');
+}
+function renderEditor(){
+  const f=FILES[activeTab]; if(!f) return;
+  $('.art-toolbar').style.display='';   // 默认显示工具条（浏览器视图会自行隐藏）
+  if(f.lang==='blank'){ drawBlank(); return; }
+  if(f.lang==='browser'){ drawBrowser(f); return; }
+  if(f.lang==='diff'){ drawDiff(f); return; }
+  showTree();   // 非浏览器/非 diff 页签恢复目录树
+  $('#blankPanel').style.display='none'; $('#browserView').style.display='none'; $('#diffView').style.display='none'; $('#emptyState').style.display='none';
+  $('#codeArea').style.display=''; $('.ai-gen').style.display='';
+  $('#crumb').textContent=activeTab;
+  const previewable = /\.(html?|md)$/i.test(activeTab);
+  $('#previewToggle').style.display = previewable ? 'flex' : 'none';
+  const view = previewable ? 'preview' : 'source';   // HTML/MD 默认预览态
+  $('#previewToggle').dataset.view=view;
+  $$('#previewToggle .pt-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
+  view==='preview' ? drawPreview(f) : drawSource(f);
+}
+/* 空白页（初始态）：新建文件从目录树选 / URL / 搜索 */
+function newBlankTab(){
+  const id='新标签页';
+  if(!tabs.includes(id)){ FILES[id]={ic:'plus',lang:'blank',content:''}; tabs.push(id); }
+  activeTab=id;   // 选中文件后在本空白页内就地展示，不再另开
+  renderTabs(); renderEditor(); renderTree();
+}
+function drawBlank(){
+  $('#crumb').textContent='新标签页';
+  showTree();
+  $('#previewToggle').style.display='none';
+  $('#openIdeBtn').style.display='none';
+  $('.ai-gen').style.display='none';
+  $('#codeArea').style.display='none';
+  $('#browserView').style.display='none';
+  $('#diffView').style.display='none';
+  $('#emptyState').style.display='none';
+  $('#blankPanel').style.display='flex';
+}
+/* 浏览器页签：初始态为顶部可输入 URL 的空浏览器视图，输入后加载页面 */
+function normalizeUrl(u){ u=u.trim(); if(!u) return ''; if(!/^https?:\/\//i.test(u)) u='http://'+u; return u; }
+let browserSeq=0;
+function newBrowserTab(){
+  const id='浏览器'+(++browserSeq);
+  FILES[id]={ic:'globe',lang:'browser',title:'新标签页',url:''};
+  if(tabs.includes(activeTab)){ tabs[tabs.indexOf(activeTab)]=id; } else { tabs.push(id); }
+  activeTab=id; renderTabs(); renderEditor(); renderTree();
+}
+function drawBrowser(f){
+  $('#crumb').textContent=f.title||'新标签页';
+  $('.art-toolbar').style.display='none';   // 浏览器页签：隐藏面包屑工具条，避免与顶部页签栏重复
+  hideTree();                               // 浏览器页签：同时关闭目录树，呈现纯浏览器视图
+  $('#previewToggle').style.display='none';
+  $('#openIdeBtn').style.display='none';
+  $('.ai-gen').style.display='none';
+  $('#codeArea').style.display='none';
+  $('#blankPanel').style.display='none';
+  $('#emptyState').style.display='none';
+  $('#diffView').style.display='none';
+  $('#browserView').style.display='flex';
+  $('#bvSuggest').classList.remove('show');
+  $('#bvInput').value=f.url||'';
+  if(f.url){ $('#bvEmpty').style.display='none'; $('#bvFrame').style.display='block'; $('#bvFrame').src=f.url; }
+  else { $('#bvEmpty').style.display='flex'; $('#bvFrame').style.display='none'; $('#bvFrame').removeAttribute('src');
+    setTimeout(()=>$('#bvInput').focus(),0); }
+}
+function bvLoad(url){
+  url=normalizeUrl(url); if(!url) return;
+  const f=FILES[activeTab]; if(!f||f.lang!=='browser') return;
+  let host=url; try{ host=new URL(url).hostname+(new URL(url).port?':'+new URL(url).port:''); }catch(e){}
+  f.url=url; f.title=host;
+  $('#bvSuggest').classList.remove('show');
+  $('#bvInput').value=url; $('#crumb').textContent=host;
+  $('#bvEmpty').style.display='none'; $('#bvFrame').style.display='block'; $('#bvFrame').src=url;
+  renderTabs();
+}
+$('#bvInput').addEventListener('focus',()=>{ $('#bvSuggest').classList.add('show'); });
+$('#bvInput').addEventListener('blur',()=>{ setTimeout(()=>$('#bvSuggest').classList.remove('show'),150); });
+$('#bvInput').addEventListener('keydown',e=>{ if(e.key==='Enter') bvLoad(e.target.value); });
+$('#bvSuggest').addEventListener('click',e=>{ const it=e.target.closest('[data-url]'); if(it) bvLoad(it.dataset.url); });
+$('#browserView').addEventListener('click',e=>{ const b=e.target.closest('[data-bv]'); if(!b)return;
+  const act=b.dataset.bv, fr=$('#bvFrame');
+  if(act==='open') bvLoad($('#bvInput').value);
+  else if(act==='refresh'){ if(fr.src) fr.src=fr.src; toast('刷新页面'); }
+  else if(act==='back'){ try{fr.contentWindow.history.back();}catch(e){} }
+  else if(act==='fwd'){ try{fr.contentWindow.history.forward();}catch(e){} }
+  else if(act==='menu') toast('浏览器菜单');
+});
+function showTree(){ $('.main').classList.remove('tree-hidden'); $('#treeToggle').classList.add('on'); }
+function hideTree(){ $('.main').classList.add('tree-hidden'); $('#treeToggle').classList.remove('on'); }
+
+/* ---- 代码变更（diff）页签：与文件页签、浏览器页签互不影响 ---- */
+const DIFF_TAB='代码变更';
+let dvFilter='';
+function openDiffTab(){
+  if(!FILES[DIFF_TAB]) FILES[DIFF_TAB]={ic:'grid',lang:'diff',title:DIFF_TAB};
+  if(!tabs.includes(DIFF_TAB)) tabs.push(DIFF_TAB);
+  activeTab=DIFF_TAB;
+  $('.main').classList.add('art-open');
+  renderTabs(); renderEditor(); renderTree();
+}
+function drawDiff(f){
+  $('#crumb').textContent=f.title||DIFF_TAB;
+  $('.art-toolbar').style.display='none';   // diff 视图自带标题区
+  hideTree();                               // 用 diff 自己的「变更文件」列表替代目录树
+  $('#previewToggle').style.display='none';
+  $('#openIdeBtn').style.display='none';
+  $('.ai-gen').style.display='none';
+  $('#codeArea').style.display='none';
+  $('#blankPanel').style.display='none';
+  $('#emptyState').style.display='none';
+  $('#browserView').style.display='none';
+  $('#diffView').style.display='flex';
+  renderDiff();
+}
+function renderDiff(){
+  const d=DIFF, tot=d.files.reduce((a,f)=>({add:a.add+f.add,del:a.del+f.del}),{add:0,del:0});
+  $('#dvTitle').textContent=d.title;
+  $('#dvSub').innerHTML=`${d.files.length} 个文件已更改 <span class="add">+${tot.add}</span> <span class="del">-${tot.del}</span>`;
+  const row=l=>`<div class="dl ${l.t==='add'?'add':''}"><span class="ln">${l.o||''}</span><span class="ln">${l.n||''}</span><span class="tx">${esc(l.s)||' '}</span></div>`;
+  $('#dvDiff').innerHTML=d.files.map(f=>`<div class="dv-blk">
+      <div class="dv-blk-head">
+        <span class="dc-x"><svg class="i sm"><use href="#i-x"></use></svg></span>
+        <svg class="i sm" style="color:var(--warn)"><use href="#i-file"></use></svg>
+        <span>${f.name}</span>
+        <span class="s"><span class="add">+${f.add}</span> <span class="del">-${f.del}</span></span>
+      </div>
+      <div class="dv-hunks">${f.hunks.map(h=>h.map(row).join('')).join('<div class="dl gap"><span class="ln"></span><span class="ln"></span><span class="tx">⋯</span></div>')}</div>
+    </div>`).join('');
+  const q=dvFilter, hit=d.files.filter(f=>f.name.toLowerCase().includes(q));
+  $('#dvSideList').innerHTML=(hit.length?`<div class="dv-row dir"><svg class="i sm"><use href="#i-folder"></use></svg>${d.dir}</div>`:'')
+    + hit.map(f=>`<div class="dv-row active"><svg class="i sm" style="color:var(--warn)"><use href="#i-file"></use></svg>${f.name}</div>`).join('');
+}
+$('#dvSideToggle').onclick=()=>{ $('#diffView').classList.toggle('side-hidden'); };
+$('#dvFilter').addEventListener('input',e=>{ dvFilter=e.target.value.trim().toLowerCase(); renderDiff(); });
+/* 会话流里的 diff 卡片 → 右侧「代码变更」页签预览 */
+$('#diffCard').addEventListener('click',e=>{
+  openDiffTab();
+});
+function drawSource(f){
+  $('.editor').dataset.mode='source';
+  $('#openIdeBtn').style.display=''; // 源码/可编辑态展示 打开 IDE
+  const body = f.lang==='json' ? hlJSON(f.content) : esc(f.content);
+  const lines = body.split('\n').map((ln,i)=>`<span class="cl ${(i+1)===f.active?'active':''}">${ln||' '}</span>`).join('');
+  $('#codeArea').innerHTML=lines;
+}
+function drawPreview(f){
+  $('.editor').dataset.mode='preview';
+  $('#openIdeBtn').style.display='none'; // 预览/只读态隐藏
+  if(/\.html?$/i.test(activeTab)){
+    $('#codeArea').innerHTML=`<iframe style="width:100%;height:100%;min-height:70vh;border:0" srcdoc="${f.content.replace(/"/g,'&quot;')}"></iframe>`;
+  }else{ // md 简易预览
+    const html=esc(f.content).replace(/^### (.*)$/gm,'<h3>$1</h3>').replace(/^## (.*)$/gm,'<h2>$1</h2>')
+      .replace(/^# (.*)$/gm,'<h1>$1</h1>').replace(/^- (.*)$/gm,'• $1<br>').replace(/^(\d+)\. (.*)$/gm,'$1. $2<br>').replace(/\n\n/g,'<br><br>');
+    $('#codeArea').innerHTML=`<div style="padding:16px 24px;font-family:sans-serif;line-height:1.7">${html}</div>`;
+  }
+}
+
+/* --- 交互事件 --- */
+$('#tabBar').addEventListener('click',e=>{
+  const x=e.target.closest('[data-close]'); if(x){ e.stopPropagation(); closeTab(x.dataset.close); return; }
+  const t=e.target.closest('[data-tab]'); if(t){ activeTab=t.dataset.tab; renderTabs(); renderEditor(); renderTree(); }
+});
+$('#ftScroll').addEventListener('click',e=>{
+  const d=e.target.closest('[data-dir]');
+  if(d){ const node=tree.find(n=>n.n===d.dataset.dir); node.open=!node.open; renderTree(); return; }
+  const f=e.target.closest('[data-file]'); if(f) openFile(f.dataset.file, false); // 目录树浏览：复用同一页签
+});
+$('#ftScroll').addEventListener('dblclick',e=>{
+  const f=e.target.closest('[data-file]'); if(f) openFile(f.dataset.file, true); // 双击：固定为独立页签
+});
+/* 右键：文件/文件夹均支持“添加到会话”；HTML 额外支持“用外部浏览器打开” */
+let ctxTarget='', ctxIsHtml=false;
+$('#ftScroll').addEventListener('contextmenu',e=>{
+  const row=e.target.closest('[data-file],[data-dir]'); if(!row) return; e.preventDefault();
+  ctxTarget = row.dataset.file || row.dataset.dir;
+  ctxIsHtml = !!row.dataset.file && /\.html?$/i.test(ctxTarget);
+  $('#ctxOpenBrowser').style.display = ctxIsHtml ? '' : 'none';
+  const m=$('#ftCtxMenu'); m.classList.add('open'); m.style.left=Math.min(e.clientX,innerWidth-210)+'px'; m.style.top=e.clientY+'px';
+});
+$('#ftCtxMenu').addEventListener('click',e=>{ const it=e.target.closest('[data-ctx]'); if(!it)return; closeMenus();
+  if(it.dataset.ctx==='add'){ addRef(ctxTarget); toast('已添加到会话：'+ctxTarget); }
+  else { toast('用外部浏览器打开：'+ctxTarget); }
+});
+/* 目录树标题：更多 → 打开本地文件夹 */
+$('#ftMoreBtn').setAttribute('data-keep','1');
+$('#ftMoreBtn').onclick=e=>{ e.stopPropagation(); openMenuAt($('#ftMoreMenu'), $('#ftMoreBtn'),'right'); };
+/* 目录树搜索：点击搜索图标 → 隐藏仓库名，显示输入框；清空/Esc → 恢复 */
+function ftSearchExit(){ $('.ft-head').classList.remove('searching'); $('#ftSearch').value=''; $('#ftSearch').hidden=true; treeFilter=''; renderTree(); }
+$('#ftSearchBtn').onclick=e=>{ e.stopPropagation();
+  const on=!$('.ft-head').classList.contains('searching');
+  if(on){ $('.ft-head').classList.add('searching'); $('#ftSearch').hidden=false; $('#ftSearch').focus(); }
+  else ftSearchExit();
+};
+$('#ftSearch').addEventListener('input',e=>{ treeFilter=e.target.value.trim().toLowerCase(); renderTree(); });
+$('#ftSearch').addEventListener('keydown',e=>{ if(e.key==='Escape') ftSearchExit(); });
+$('#ftMoreMenu').addEventListener('click',e=>{ if(!e.target.closest('[data-ftmore]'))return; closeMenus();
+  toast('打开本地文件夹：DaDaWX-main'); });
+/* 工具栏 */
+$('#openIdeBtn').onclick=()=>toast('唤起本地 Comate IDE，并带入工作区 DaDaWX-main（未安装则跳转官网下载）');
+$('#artExpand').onclick=()=>{ $('.main').classList.toggle('art-max'); };
+$('#artCollapse').onclick=()=>{ $('.main').classList.remove('art-open','art-max'); };
+$('#treeToggle').onclick=()=>{ const hidden=$('.main').classList.toggle('tree-hidden'); $('#treeToggle').classList.toggle('on', !hidden); };
+$('#newTabBtn').onclick=e=>{ e.stopPropagation(); newBlankTab(); };
+/* 空白页初始态操作 */
+$('#blankPanel').addEventListener('click',e=>{ const b=e.target.closest('[data-blank]'); if(!b)return;
+  const v=b.dataset.blank;
+  if(v==='file'){ showTree(); toast('请从右侧目录树选择文件'); }
+  else if(v==='url'){ newBrowserTab(); }   // 就地切换为顶部可输入 URL 的浏览器视图
+});
+/* 预览/源码 切换 */
+$('#previewToggle').addEventListener('click',e=>{ const b=e.target.closest('.pt-btn'); if(!b)return;
+  $$('#previewToggle .pt-btn').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+  const f=FILES[activeTab]; b.dataset.view==='preview'?drawPreview(f):drawSource(f);
+});
+/* 会话区 */
+$('#jumpCard').onclick=()=>openFile('index.html', true);
+$('#openArtBtn').onclick=toggleArt;
+$('#homeArtBtn').onclick=toggleArt;
+document.addEventListener('click',e=>{ if(!e.target.closest('.ctx-menu')) $('#ftCtxMenu').classList.remove('open'); });
+/* 新任务 → 返回首页 */
+$$('.nav-item')[0].addEventListener('click',exitSession);
+
+/* 关闭弹窗遮罩点击空白 */
+$$('.mask').forEach(m=>m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('open'); }));
+</script>
+</body>
+</html>
+
+
+
+
+
+
+

@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "deployments": [
+    {
+      "slug": "dumate-code-demo",
+      "title": "DuMate Code 工作台原型",
+      "base": ".",
+      "entry": "workbench.html",
+      "glob": [
+        "workbench.html",
+        "dumatelogo.png"
+      ],
+      "exclude": [],
+      "lastDeployedAt": "2026-09-17T08:49:29.032173+00:00",
+      "workId": 20206,
+      "baseVersionNo": 10
+    }
+  ]
+}

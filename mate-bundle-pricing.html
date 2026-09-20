@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>mate-bundle-pricing</title>
+<style>
+  :root{
+    --bg:#0b0f17;
+    --card:#131a26;
+    --card-2:#0f1620;
+    --accent:#2f6bff;
+    --accent-2:#3b82f6;
+    --text:#e8edf5;
+    --muted:#8a93a3;
+    --line:#222c3a;
+    --ok:#4ade80;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei",Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+    padding:32px 40px 64px;
+  }
+  .note{
+    color:var(--muted);
+    font-size:13px;
+    margin-bottom:36px;
+  }
+  .hero-title{
+    text-align:center;
+    font-size:44px;
+    font-weight:800;
+    letter-spacing:1px;
+    margin-bottom:26px;
+  }
+  .tags{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:0;
+    border:1px solid var(--line);
+    border-radius:10px;
+    width:fit-content;
+    margin:0 auto 34px;
+    overflow:hidden;
+  }
+  .tags span{
+    padding:10px 20px;
+    font-size:14px;
+    color:var(--text);
+    border-right:1px solid var(--line);
+  }
+  .tags span:last-child{border-right:none}
+  .toggle{
+    display:flex;
+    width:fit-content;
+    margin:0 auto 40px;
+    background:#0f1620;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:5px;
+    gap:4px;
+  }
+  .toggle button{
+    border:none;
+    background:transparent;
+    color:var(--muted);
+    font-size:15px;
+    padding:9px 30px;
+    border-radius:9px;
+    cursor:pointer;
+    transition:.2s;
+  }
+  .toggle button.active{
+    background:#fff;
+    color:#0b0f17;
+    font-weight:600;
+  }
+  .cards{
+    display:flex;
+    justify-content:center;
+    gap:22px;
+    max-width:1100px;
+    margin:0 auto;
+    flex-wrap:wrap;
+  }
+  .card{
+    position:relative;
+    width:320px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:28px 26px;
+    display:flex;
+    flex-direction:column;
+  }
+  .card.featured{
+    border-color:var(--accent);
+    box-shadow:0 0 0 1px var(--accent), 0 12px 40px rgba(47,107,255,.18);
+  }
+  .badge{
+    position:absolute;
+    top:-14px;
+    left:50%;
+    transform:translateX(-50%);
+    background:linear-gradient(90deg,#2f6bff,#4f8bff);
+    color:#fff;
+    font-size:12px;
+    font-weight:600;
+    padding:6px 16px;
+    border-radius:20px;
+    white-space:nowrap;
+  }
+  .badge.gray{
+    background:#2a3444;
+    color:#cfd6e2;
+  }
+  .plan-name{
+    font-size:20px;
+    font-weight:700;
+    margin:12px 0 18px;
+    line-height:1.35;
+    min-height:54px;
+  }
+  .price{
+    display:flex;
+    align-items:baseline;
+    gap:2px;
+    margin-bottom:10px;
+  }
+  .price .cur{font-size:22px;font-weight:700}
+  .price .num{font-size:40px;font-weight:800;line-height:1}
+  .price .per{font-size:14px;color:var(--muted);margin-left:4px}
+  .quota{
+    font-size:13px;
+    color:var(--muted);
+    margin-bottom:22px;
+    min-height:18px;
+  }
+  .btn{
+    display:block;
+    width:100%;
+    text-align:center;
+    padding:12px;
+    border-radius:10px;
+    font-size:15px;
+    font-weight:600;
+    border:none;
+    cursor:pointer;
+    background:var(--accent);
+    color:#fff;
+    transition:.2s;
+  }
+  .btn:hover{filter:brightness(1.1)}
+  .btn.ghost{
+    background:transparent;
+    border:1px solid var(--accent);
+    color:var(--accent-2);
+  }
+  .feat-title{
+    font-size:14px;
+    font-weight:700;
+    color:var(--accent-2);
+    margin:26px 0 14px;
+  }
+  .feat-list{list-style:none;display:flex;flex-direction:column;gap:12px}
+  .feat-list li{
+    display:flex;
+    align-items:flex-start;
+    gap:8px;
+    font-size:14px;
+    color:var(--text);
+    line-height:1.4;
+  }
+  .feat-list li .tick{color:var(--ok);flex-shrink:0}
+</style>
+</head>
+<body>
+  <div class="note">原型图 · 价格页企业版区域新增「Mate 系列联合购买」(Comate + DuMate)· 占位价格待替换</div>
+
+  <h1 class="hero-title">行业领先的多模态、全栈编程智能体</h1>
+
+  <div class="tags">
+    <span>编程智能体</span>
+    <span>续写与改写</span>
+    <span>Spec 模式</span>
+    <span>Figma 转代码</span>
+    <span>Mission 工作模式</span>
+  </div>
+
+  <div class="toggle">
+    <button>个人版</button>
+    <button class="active">企业版</button>
+  </div>
+
+  <div class="cards">
+    <!-- Card 1 -->
+    <div class="card">
+      <div class="badge">畅享Agent更优惠</div>
+      <div class="plan-name">企业公有云·专业版</div>
+      <div class="price">
+        <span class="cur">¥</span><span class="num">150</span><span class="per">/人/月</span>
+      </div>
+      <div class="quota">含模型额度¥72/席位/月</div>
+      <button class="btn">立即购买</button>
+      <div class="feat-title">产品功能</div>
+      <ul class="feat-list">
+        <li><span class="tick">✓</span>编程智能体</li>
+        <li><span class="tick">✓</span>续写与改写</li>
+        <li><span class="tick">✓</span>Spec 模式</li>
+        <li><span class="tick">✓</span>Figma 转代码</li>
+        <li><span class="tick">✓</span>自定义智能体、技能、规则</li>
+        <li><span class="tick">✓</span>Mission 工作模式</li>
+      </ul>
+    </div>
+
+    <!-- Card 2 (featured) -->
+    <div class="card featured">
+      <div class="badge">畅享Agent更优惠</div>
+      <div class="plan-name">企业公有云·旗舰版</div>
+      <div class="price">
+        <span class="cur">¥</span><span class="num">358</span><span class="per">/人/月</span>
+      </div>
+      <div class="quota">含模型额度¥283/席位/月</div>
+      <button class="btn">立即购买</button>
+      <div class="feat-title">产品功能</div>
+      <ul class="feat-list">
+        <li><span class="tick">✓</span>编程智能体</li>
+        <li><span class="tick">✓</span>续写与改写</li>
+        <li><span class="tick">✓</span>Spec 模式</li>
+        <li><span class="tick">✓</span>Figma 转代码</li>
+        <li><span class="tick">✓</span>自定义智能体、技能、规则</li>
+        <li><span class="tick">✓</span>Mission 工作模式</li>
+      </ul>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="card">
+      <div class="badge gray">30天免费体验</div>
+      <div class="plan-name">企业·专属版</div>
+      <div class="price">
+        <span class="cur">¥</span><span class="num">2500</span><span class="per">/人/年</span>
+      </div>
+      <div class="quota">含全部基础功能</div>
+      <button class="btn ghost">免费试用</button>
+      <div class="feat-title">产品功能</div>
+      <ul class="feat-list">
+        <li><span class="tick">✓</span>含全部基础功能</li>
+        <li><span class="tick">✓</span>专属部署方式</li>
+        <li><span class="tick">✓</span>企业定制功能</li>
+        <li><span class="tick">✓</span>企业专属培训服务</li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

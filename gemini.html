@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>双子座今日运势</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    min-height: 100vh;
+    background: linear-gradient(160deg, #1a0a2e 0%, #2d1b4e 40%, #16213e 100%);
+    background-attachment: fixed;
+    font-family: 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', sans-serif;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 40px 20px;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* 星空背景 */
+  .stars {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .star {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: #fff;
+    border-radius: 50%;
+    animation: twinkle 3s infinite;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.2; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.5); }
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 520px;
+  }
+
+  /* 头部 */
+  .header {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+  .symbol {
+    font-size: 72px;
+    color: #88d8ff;
+    text-shadow: 0 0 30px rgba(136, 216, 255, 0.6);
+    margin-bottom: 8px;
+    animation: float 4s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  .name {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: #fff;
+  }
+  .date {
+    font-size: 13px;
+    color: #88d8ff;
+    margin-top: 4px;
+    letter-spacing: 2px;
+  }
+  .today {
+    font-size: 14px;
+    color: #bbb;
+    margin-top: 8px;
+  }
+
+  /* 卡片通用 */
+  .card {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 18px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  /* 综合运势 */
+  .overall-score {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+  }
+  .score-circle {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: conic-gradient(#88d8ff calc(var(--score) * 1%), rgba(255,255,255,0.1) 0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    animation: spin 20s linear infinite;
+  }
+  .score-circle::before {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    background: #1a0a2e;
+    border-radius: 50%;
+  }
+  .score-inner {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    animation: spin 20s linear infinite reverse;
+  }
+  .score-num {
+    font-size: 36px;
+    font-weight: 700;
+    color: #88d8ff;
+  }
+  .score-label {
+    font-size: 11px;
+    color: #aaa;
+    letter-spacing: 1px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .overall-text {
+    flex: 1;
+  }
+  .mood-tag {
+    display: inline-block;
+    padding: 4px 14px;
+    background: linear-gradient(135deg, #88d8ff33, #a78bfa33);
+    border: 1px solid #88d8ff55;
+    border-radius: 20px;
+    font-size: 13px;
+    color: #88d8ff;
+    margin-bottom: 10px;
+  }
+  .overall-desc {
+    font-size: 15px;
+    line-height: 1.8;
+    color: #ddd;
+  }
+
+  /* 分项运势 */
+  .items {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .item {
+    background: rgba(255,255,255,0.04);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .item-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #aaa;
+    margin-bottom: 8px;
+  }
+  .item-icon { font-size: 18px; }
+  .stars-row {
+    display: flex;
+    gap: 3px;
+    margin-bottom: 8px;
+  }
+  .star-fill {
+    font-size: 16px;
+    color: #ffd700;
+    text-shadow: 0 0 6px rgba(255,215,0,0.5);
+  }
+  .star-empty {
+    font-size: 16px;
+    color: #444;
+  }
+  .item-score {
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .item-unit {
+    font-size: 12px;
+    color: #888;
+  }
+
+  /* 幸运元素 */
+  .lucky-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .lucky-item {
+    flex: 1;
+    min-width: 100px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+  }
+  .lucky-label {
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+  .lucky-value {
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .lucky-color-box {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    vertical-align: middle;
+    margin-right: 6px;
+    border: 1px solid rgba(255,255,255,0.3);
+  }
+
+  /* 运势寄语 */
+  .message {
+    text-align: center;
+  }
+  .msg-quote {
+    font-size: 15px;
+    line-height: 1.9;
+    color: #e0d4ff;
+    font-style: italic;
+    margin-bottom: 12px;
+  }
+  .msg-author {
+    font-size: 12px;
+    color: #888;
+  }
+
+  /* 按钮 */
+  .refresh-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #88d8ff, #a78bfa);
+    border: none;
+    border-radius: 12px;
+    color: #1a0a2e;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 2px;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .refresh-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(136, 216, 255, 0.4);
+  }
+  .refresh-btn:active { transform: translateY(0); }
+
+  /* 周运小条 */
+  .week-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .week-day {
+    flex: 1;
+    text-align: center;
+    padding: 8px 4px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 8px;
+    font-size: 11px;
+  }
+  .week-day.today {
+    background: rgba(136, 216, 255, 0.15);
+    border: 1px solid rgba(136, 216, 255, 0.3);
+  }
+  .week-day .d { color: #888; margin-bottom: 4px; }
+  .week-day .s { font-size: 14px; }
+
+  @media (max-width: 480px) {
+    .items { grid-template-columns: 1fr; }
+    .overall-score { flex-direction: column; gap: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<div class="container">
+  <!-- 头部 -->
+  <div class="header">
+    <div class="symbol">♊</div>
+    <div class="name">双子座</div>
+    <div class="date">5.21 — 6.21</div>
+    <div class="today" id="today-date"></div>
+  </div>
+
+  <!-- 综合运势 -->
+  <div class="card">
+    <div class="overall-score">
+      <div class="score-circle" id="score-circle" style="--score: 82;">
+        <div class="score-inner">
+          <div class="score-num" id="overall-score">82</div>
+          <div class="score-label">综合运势</div>
+        </div>
+      </div>
+      <div class="overall-text">
+        <div class="mood-tag" id="mood-tag">✨ 好运连连</div>
+        <div class="overall-desc" id="overall-desc">
+          今天的你思维敏捷、灵感迸发，适合处理创意性工作。社交运极佳，与朋友的交流中可能获得意外收获。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 分项运势 -->
+  <div class="card">
+    <div class="items">
+      <div class="item">
+        <div class="item-title"><span class="item-icon">💕</span>爱情</div>
+        <div class="stars-row" id="love-stars"></div>
+        <div><span class="item-score" id="love-score">88</span><span class="item-unit"> /100</span></div>
+      </div>
+      <div class="item">
+        <div class="item-title"><span class="item-icon">💼</span>事业</div>
+        <div class="stars-row" id="career-stars"></div>
+        <div><span class="item-score" id="career-score">78</span><span class="item-unit"> /100</span></div>
+      </div>
+      <div class="item">
+        <div class="item-title"><span class="item-icon">💰</span>财运</div>
+        <div class="stars-row" id="money-stars"></div>
+        <div><span class="item-score" id="money-score">72</span><span class="item-unit"> /100</span></div>
+      </div>
+      <div class="item">
+        <div class="item-title"><span class="item-icon">🌿</span>健康</div>
+        <div class="stars-row" id="health-stars"></div>
+        <div><span class="item-score" id="health-score">85</span><span class="item-unit"> /100</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 周运 -->
+  <div class="card">
+    <div class="week-row" id="week-row"></div>
+  </div>
+
+  <!-- 幸运元素 -->
+  <div class="card">
+    <div class="lucky-row">
+      <div class="lucky-item">
+        <div class="lucky-label">幸运数字</div>
+        <div class="lucky-value" id="lucky-num">5</div>
+      </div>
+      <div class="lucky-item">
+        <div class="lucky-label">幸运颜色</div>
+        <div class="lucky-value" id="lucky-color">
+          <span class="lucky-color-box" id="color-box" style="background:#87ceeb;"></span>天蓝
+        </div>
+      </div>
+      <div class="lucky-item">
+        <div class="lucky-label">贵人方位</div>
+        <div class="lucky-value" id="lucky-dir">正东</div>
+      </div>
+      <div class="lucky-item">
+        <div class="lucky-label">开运物品</div>
+        <div class="lucky-value" id="lucky-item">薄荷糖</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 今日寄语 -->
+  <div class="card message">
+    <div class="msg-quote" id="msg-quote">
+      "保持好奇心，世界会为你打开更多扇门。"
+    </div>
+    <div class="msg-author">—— 今日运势寄语</div>
+  </div>
+
+  <button class="refresh-btn" id="refresh-btn">🔄 查看明日运势</button>
+</div>
+
+<script>
+// 生成星空
+(function createStars() {
+  const container = document.getElementById('stars');
+  for (let i = 0; i < 120; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.style.left = Math.random() * 100 + '%';
+    s.style.top = Math.random() * 100 + '%';
+    s.style.animationDelay = Math.random() * 3 + 's';
+    s.style.width = s.style.height = (Math.random() * 2 + 1) + 'px';
+    container.appendChild(s);
+  }
+})();
+
+// 日期显示
+(function showDate() {
+  const d = new Date();
+  const week = ['周日','周一','周二','周三','周四','周五','周六'];
+  document.getElementById('today-date').textContent =
+    `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 ${week[d.getDay()]}`;
+})();
+
+// 双子座运势数据池
+const fortunes = {
+  desc: [
+    '今天的你思维敏捷、灵感迸发，适合处理创意性工作。社交运极佳，与朋友的交流中可能获得意外收获。',
+    '沟通能力在线，适合谈判、演讲或写方案。注意不要因为想同时做太多事而分散精力。',
+    '好奇心旺盛的一天，适合学习新技能或接触陌生领域。短途旅行或城市探索会带来好心情。',
+    '心智活跃但略显急躁，重要决策建议下午再做。多听少说，能避免不必要的误会。',
+    '社交圈热闹，容易收到聚会邀约。但也需要给自己留一点独处的时间来整理思绪。',
+    '灵感爆棚的一天，艺术、写作、策划类事情进展顺利。记得把好点子记录下来！'
+  ],
+  tags: ['✨ 好运连连', '🌟 灵感充沛', '💫 社交达人', '🌤 平稳顺畅', '🔥 能量满格', '🍀 小确幸多'],
+  quotes: [
+    '"保持好奇心，世界会为你打开更多扇门。"',
+    '"好的沟通不是说得多，而是说得准。"',
+    '"今天的灵感，是明天最好的素材。"',
+    '"一个人也可以是很好的伙伴。"',
+    '"别让选择的焦虑，抢走你行动的快乐。"',
+    '"双子的多变，是对生活最大的热情。"'
+  ],
+  luckyColors: [
+    { name: '天蓝', hex: '#87ceeb' },
+    { name: '薄荷绿', hex: '#98ff98' },
+    { name: '明黄', hex: '#ffeb3b' },
+    { name: '浅紫', hex: '#d8b4fe' },
+    { name: '银灰', hex: '#c0c0c0' },
+    { name: '珊瑚粉', hex: '#ff7f7f' }
+  ],
+  directions: ['正东', '东南', '正南', '西南', '正西', '西北', '正北', '东北'],
+  items: ['薄荷糖', '笔记本', '耳机', '矿泉水', '书签', '雨伞', '便签纸', '钢笔']
+};
+
+function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function renderStars(containerId, score) {
+  const full = Math.round(score / 20);
+  let html = '';
+  for (let i = 0; i < 5; i++) {
+    html += i < full ? '<span class="star-fill">★</span>' : '<span class="star-empty">★</span>';
+  }
+  document.getElementById(containerId).innerHTML = html;
+}
+
+function generateFortune() {
+  // 分数
+  const overall = rand(65, 95);
+  const love = rand(55, 98);
+  const career = rand(55, 95);
+  const money = rand(50, 92);
+  const health = rand(60, 96);
+
+  // 更新 UI
+  document.getElementById('score-circle').style.setProperty('--score', overall);
+  document.getElementById('overall-score').textContent = overall;
+  document.getElementById('mood-tag').textContent = pick(fortunes.tags);
+  document.getElementById('overall-desc').textContent = pick(fortunes.desc);
+  document.getElementById('msg-quote').textContent = pick(fortunes.quotes);
+
+  document.getElementById('love-score').textContent = love;
+  document.getElementById('career-score').textContent = career;
+  document.getElementById('money-score').textContent = money;
+  document.getElementById('health-score').textContent = health;
+
+  renderStars('love-stars', love);
+  renderStars('career-stars', career);
+  renderStars('money-stars', money);
+  renderStars('health-stars', health);
+
+  // 幸运元素
+  document.getElementById('lucky-num').textContent = rand(1, 9);
+  const color = pick(fortunes.luckyColors);
+  document.getElementById('color-box').style.background = color.hex;
+  // 重新设置 lucky-color 的文字
+  const luckyColorEl = document.getElementById('lucky-color');
+  luckyColorEl.innerHTML = `<span class="lucky-color-box" style="background:${color.hex};"></span>${color.name}`;
+  document.getElementById('lucky-dir').textContent = pick(fortunes.directions);
+  document.getElementById('lucky-item').textContent = pick(fortunes.items);
+
+  // 周运
+  renderWeek();
+}
+
+function renderWeek() {
+  const week = ['一','二','三','四','五','六','日'];
+  const today = new Date().getDay(); // 0=Sun
+  // 把周一作为第一天
+  const mondayIdx = (today === 0 ? 6 : today - 1);
+  let html = '';
+  for (let i = 0; i < 7; i++) {
+    const dayIdx = (mondayIdx + i) % 7;
+    const isToday = i === 0;
+    const score = rand(55, 95);
+    const star = score >= 85 ? '🌟' : score >= 70 ? '✨' : '🌙';
+    html += `
+      <div class="week-day ${isToday ? 'today' : ''}">
+        <div class="d">周${week[dayIdx]}</div>
+        <div class="s">${star}</div>
+      </div>`;
+  }
+  document.getElementById('week-row').innerHTML = html;
+}
+
+document.getElementById('refresh-btn').addEventListener('click', () => {
+  const btn = document.getElementById('refresh-btn');
+  btn.textContent = '✨ 刷新中...';
+  btn.disabled = true;
+  setTimeout(() => {
+    generateFortune();
+    btn.textContent = '🔄 查看明日运势';
+    btn.disabled = false;
+  }, 500);
+});
+
+// 初始化
+generateFortune();
+</script>
+</body>
+</html>
